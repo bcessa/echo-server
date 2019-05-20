@@ -1,0 +1,11 @@
+# Generals
+.DS_Store
+.idea
+
+# Deps
+vendor/**
+
+# Binaries and support files
+ca-roots.crt
+echo-server
+echo-server-linux
