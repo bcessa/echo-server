@@ -32,13 +32,30 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	// Add support for ECHO_ env variables
+	cobra.OnInitialize(func() {
+		viper.SetEnvPrefix("echo")
+		viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+		viper.AutomaticEnv()
+	})
+	// Get default server name
+	name, err := os.Hostname()
+	if err != nil {
+		name = "sample-echo-server.local"
+	}
+	// Define server parameters
 	params := []cli.Param{
 		{
 			Name:      "port",
 			Usage:     "TCP port to use for the server",
 			FlagKey:   "port",
 			ByDefault: 9090,
+		},
+		{
+			Name:      "name",
+			Usage:     "FQDN server name, if using a certificate it must be valid for it",
+			FlagKey:   "name",
+			ByDefault: name,
 		},
 		{
 			Name:      "http",
@@ -70,12 +87,6 @@ func init() {
 	}
 }
 
-func initConfig() {
-	viper.SetEnvPrefix("echo")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-}
-
 func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
 	log.Printf("Build code: %s\n", buildCode)
@@ -92,8 +103,10 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// Configure server
 	srvOptions := []rpc.ServerOption{
+		rpc.WithServerName(viper.GetString("name")),
 		rpc.WithPort(port),
 		rpc.WithService(echoService),
+		rpc.WithLogger(nil),
 	}
 	if enableHTTP {
 		log.Println("HTTP interface enabled")
