@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"syscall"
@@ -89,7 +88,7 @@ func init() {
 
 func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
-	log.Printf("Build code: %s\n", buildCode)
+	fmt.Printf("= build code: %s\n", buildCode)
 	port := viper.GetInt("port")
 	enableHTTP := viper.GetBool("http")
 
@@ -109,7 +108,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		rpc.WithLogger(nil),
 	}
 	if enableHTTP {
-		log.Println("HTTP interface enabled")
+		fmt.Println("= HTTP interface enabled")
 		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{}))
 	}
 	if viper.GetString("cert") != "" {
@@ -139,7 +138,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// Start server and wait for interruption signal
 	go server.Start()
-	log.Printf("Waiting for requests at port: %d\n", port)
+	fmt.Printf("= waiting for requests at port: %d\n", port)
 	<-cli.SignalsHandler([]os.Signal{
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -147,7 +146,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		syscall.SIGQUIT,
 		os.Interrupt,
 	})
-	log.Println("Server closed")
+	fmt.Println("= server closed")
 	_ = server.Stop()
 	return nil
 }
