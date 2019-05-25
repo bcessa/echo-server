@@ -75,10 +75,16 @@ func init() {
 			ByDefault: "",
 		},
 		{
-			Name:      "client-ca",
-			Usage:     "Certificate Authority to use when using client certificates",
-			FlagKey:   "client-ca",
+			Name:      "ca",
+			Usage:     "Custom Certificate Authority to use",
+			FlagKey:   "ca",
 			ByDefault: "",
+		},
+		{
+			Name:      "client-cert",
+			Usage:     "Require clients to present identity certificates",
+			FlagKey:   "client-cert",
+			ByDefault: false,
 		},
 	}
 	if err := cli.SetupCommandParams(rootCmd, params); err != nil {
@@ -90,7 +96,6 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
 	fmt.Printf("= build code: %s\n", buildCode)
 	port := viper.GetInt("port")
-	enableHTTP := viper.GetBool("http")
 
 	// Echo service provider
 	echoService := &rpc.Service{
@@ -107,12 +112,17 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		rpc.WithService(echoService),
 		rpc.WithLogger(nil),
 	}
-	if enableHTTP {
-		fmt.Println("= HTTP interface enabled")
-		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{}))
-	}
 	if viper.GetString("cert") != "" {
-		srvTLS := rpc.ServerTLSConfig{}
+		fmt.Println("= TLS enabled")
+		srvTLS := rpc.ServerTLSConfig{
+			IncludeSystemCAs:   true,
+			CustomCACerts:      [][]byte{},
+			RequireClientCerts: false,
+		}
+		ca, err := ioutil.ReadFile(viper.GetString("ca"))
+		if err != nil {
+			return err
+		}
 		srvTLS.Cert, err = ioutil.ReadFile(viper.GetString("cert"))
 		if err != nil {
 			return err
@@ -121,15 +131,17 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		if err != nil {
 			return err
 		}
-		clientCA := viper.GetString("client-ca")
-		if clientCA != "" {
-			cc, err := ioutil.ReadFile(clientCA)
-			if err != nil {
-				return err
-			}
-			srvTLS.ClientCAs = append(srvTLS.ClientCAs, cc)
+		srvTLS.CustomCACerts = append(srvTLS.CustomCACerts, ca)
+		if viper.GetBool("client-cert") {
+			fmt.Println("= expecting client certificates")
+			srvTLS.RequireClientCerts = true
+			srvTLS.ClientCAs = append(srvTLS.ClientCAs, ca)
 		}
 		srvOptions = append(srvOptions, rpc.WithTLS(srvTLS))
+	}
+	if viper.GetBool("http") {
+		fmt.Println("= HTTP interface enabled")
+		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{}))
 	}
 	server, err := rpc.NewServer(srvOptions...)
 	if err != nil {

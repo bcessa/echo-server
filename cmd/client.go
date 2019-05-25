@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/abiosoft/ishell"
@@ -13,6 +15,7 @@ import (
 	samplev1 "github.com/bryk-io/x/net/rpc/sample/v1"
 	"github.com/gogo/protobuf/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var clientCmd = &cobra.Command{
@@ -23,6 +26,12 @@ var clientCmd = &cobra.Command{
 
 func init() {
 	params := []cli.Param{
+		{
+			Name:      "ca",
+			Usage:     "Certificate Authority to use",
+			FlagKey:   "client.ca",
+			ByDefault: "",
+		},
 		{
 			Name:      "cert",
 			Usage:     "Client TLS certificate",
@@ -155,16 +164,39 @@ func runClient(_ *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("you must specify the server endpoint")
 	}
+	endpoint := args[0]
 
 	// Configure client connection
 	clOpts := []rpc.ClientOption{
 		rpc.WaitForReady(),
+		rpc.WithTimeout(5 * time.Second),
 		rpc.WithCompression(),
 		rpc.WithUserAgent("echo-client/0.1.0"),
 	}
+	if viper.GetString("client.cert") != "" {
+		fmt.Println("= TLS enabled")
+		var err error
+		server := strings.Split(endpoint, ":")
+		clientTLS := rpc.ClientTLSConfig{
+			ServerName:       server[0],
+			IncludeSystemCAs: true,
+			CustomCACerts:    [][]byte{},
+		}
+		if clientTLS.ClientCertificate, err = ioutil.ReadFile(viper.GetString("client.cert")); err != nil {
+			return err
+		}
+		if clientTLS.ClientPrivateKey, err = ioutil.ReadFile(viper.GetString("client.key")); err != nil {
+			return err
+		}
+		ca, err := ioutil.ReadFile(viper.GetString("client.ca"))
+		if err != nil {
+			return err
+		}
+		clientTLS.CustomCACerts = append(clientTLS.CustomCACerts, ca)
+		clOpts = append(clOpts, rpc.WithClientTLS(clientTLS))
+	}
 
 	// Open connection
-	endpoint := args[0]
 	fmt.Printf("= reaching out to: %s\n", endpoint)
 	conn, err := rpc.NewClientConnection(endpoint, clOpts...)
 	if err != nil {
