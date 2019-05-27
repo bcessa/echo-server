@@ -107,6 +107,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// Configure server
 	srvOptions := []rpc.ServerOption{
+		rpc.WithNetworkInterface(rpc.NetworkInterfaceAll),
 		rpc.WithServerName(viper.GetString("name")),
 		rpc.WithPort(port),
 		rpc.WithService(echoService),
