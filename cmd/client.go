@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +54,7 @@ func init() {
 	rootCmd.AddCommand(clientCmd)
 }
 
-func getShell(cl samplev1.EchoAPIClient) *ishell.Shell {
+func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishell.Shell {
 	shell := ishell.New()
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ping",
@@ -157,14 +160,50 @@ func getShell(cl samplev1.EchoAPIClient) *ishell.Shell {
 			}
 		},
 	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "http",
+		Help: "Send an http request",
+		Func: func(c *ishell.Context) {
+			r, err := hc.Post(endpoint + "/echo/ping", "application/json", nil)
+			if err != nil {
+				c.Printf("error: %s\n", err.Error())
+			} else {
+				c.Printf("Status: %v\n", r.Status)
+				c.Println("--------------")
+				for k, v := range r.Header {
+					c.Printf("%s: %v\n", k, v)
+				}
+				_ = r.Body.Close()
+				return
+			}
+		},
+	})
 	return shell
+}
+
+func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
+	cl := &http.Client{}
+	if ca != nil {
+		cp, _ := x509.SystemCertPool()
+		cp.AppendCertsFromPEM(ca)
+		conf := &tls.Config{RootCAs: cp}
+		if cert != nil {
+			conf.Certificates = []tls.Certificate{*cert}
+		}
+		cl.Transport = &http.Transport{TLSClientConfig: conf}
+	}
+	return cl
 }
 
 func runClient(_ *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("you must specify the server endpoint")
 	}
+	protocol := "http://"
 	endpoint := args[0]
+
+	var clientCert tls.Certificate
+	var clientCA []byte = nil
 
 	// Configure client connection
 	clOpts := []rpc.ClientOption{
@@ -176,6 +215,7 @@ func runClient(_ *cobra.Command, args []string) error {
 	if viper.GetString("client.cert") != "" {
 		fmt.Println("= TLS enabled")
 		var err error
+		protocol = "https://"
 		server := strings.Split(endpoint, ":")
 		clientTLS := rpc.ClientTLSConfig{
 			ServerName:       server[0],
@@ -188,12 +228,16 @@ func runClient(_ *cobra.Command, args []string) error {
 		if clientTLS.ClientPrivateKey, err = ioutil.ReadFile(viper.GetString("client.key")); err != nil {
 			return err
 		}
-		ca, err := ioutil.ReadFile(viper.GetString("client.ca"))
+		clientCA, err = ioutil.ReadFile(viper.GetString("client.ca"))
 		if err != nil {
 			return err
 		}
-		clientTLS.CustomCACerts = append(clientTLS.CustomCACerts, ca)
+		clientTLS.CustomCACerts = append(clientTLS.CustomCACerts, clientCA)
 		clOpts = append(clOpts, rpc.WithClientTLS(clientTLS))
+		clientCert, err = tls.X509KeyPair(clientTLS.ClientCertificate, clientTLS.ClientPrivateKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Open connection
@@ -206,7 +250,7 @@ func runClient(_ *cobra.Command, args []string) error {
 
 	// Start interactive client
 	cl := samplev1.NewEchoAPIClient(conn)
-	shell := getShell(cl)
+	shell := getShell(cl, getHTTPClient(clientCA, &clientCert), protocol + endpoint)
 	shell.Println("= interactive shell")
 	shell.Run()
 
