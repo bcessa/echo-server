@@ -22,7 +22,7 @@ import (
 )
 
 var clientCmd = &cobra.Command{
-	Use:   "client {SERVER}",
+	Use:   "client",
 	Short: "Start an interactive client to a running echo server",
 	RunE:  runClient,
 }
@@ -45,6 +45,18 @@ func init() {
 			Name:      "key",
 			Usage:     "Client private key",
 			FlagKey:   "client.key",
+			ByDefault: "",
+		},
+		{
+			Name:      "server",
+			Usage:     "RPC server endpoint",
+			FlagKey:   "client.server",
+			ByDefault: "",
+		},
+		{
+			Name:      "server-http",
+			Usage:     "HTTPS server endpoint, if any",
+			FlagKey:   "client.http",
 			ByDefault: "",
 		},
 	}
@@ -164,6 +176,10 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 		Name: "http",
 		Help: "Send an http request",
 		Func: func(c *ishell.Context) {
+			if endpoint == "" {
+				c.Println("no HTTP endpoint specified")
+				return
+			}
 			r, err := hc.Post(endpoint + "/echo/ping", "application/json", nil)
 			if err != nil {
 				c.Printf("error: %s\n", err.Error())
@@ -195,12 +211,11 @@ func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
 	return cl
 }
 
-func runClient(_ *cobra.Command, args []string) error {
-	if len(args) == 0 {
+func runClient(_ *cobra.Command, _ []string) error {
+	endpoint := viper.GetString("client.server")
+	if endpoint == "" {
 		return errors.New("you must specify the server endpoint")
 	}
-	protocol := "http://"
-	endpoint := args[0]
 
 	var clientCert tls.Certificate
 	var clientCA []byte = nil
@@ -215,7 +230,6 @@ func runClient(_ *cobra.Command, args []string) error {
 	if viper.GetString("client.cert") != "" {
 		fmt.Println("= TLS enabled")
 		var err error
-		protocol = "https://"
 		server := strings.Split(endpoint, ":")
 		clientTLS := rpc.ClientTLSConfig{
 			ServerName:       server[0],
@@ -250,7 +264,7 @@ func runClient(_ *cobra.Command, args []string) error {
 
 	// Start interactive client
 	cl := samplev1.NewEchoAPIClient(conn)
-	shell := getShell(cl, getHTTPClient(clientCA, &clientCert), protocol + endpoint)
+	shell := getShell(cl, getHTTPClient(clientCA, &clientCert), viper.GetString("client.http"))
 	shell.Println("= interactive shell")
 	shell.Run()
 

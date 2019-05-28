@@ -141,8 +141,10 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		srvOptions = append(srvOptions, rpc.WithTLS(srvTLS))
 	}
 	if viper.GetBool("http") {
-		fmt.Println("= HTTP interface enabled")
-		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{}))
+		fmt.Printf("= HTTP interface enabled on port: %d\n", port + 1)
+		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{
+			Port: port + 1,
+		}))
 	}
 	server, err := rpc.NewServer(srvOptions...)
 	if err != nil {

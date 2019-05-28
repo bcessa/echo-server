@@ -7,6 +7,6 @@ LABEL version=${VERSION}
 COPY echo-server-linux /
 COPY ca-roots.crt /etc/ssl/certs/
 
-EXPOSE 9090
+EXPOSE 9090 9091
 
 ENTRYPOINT ["/echo-server-linux"]
