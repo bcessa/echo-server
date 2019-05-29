@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo-server-http
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http
+    ingress.kubernetes.io/protocol: http
+spec:
+  rules:
+    - host: echo.fairbank.io
+      http:
+        paths:
+          - path: /echo
+            backend:
+              serviceName: echo-server
+              servicePort: http
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo-server-rpc
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http
+    ingress.kubernetes.io/protocol: h2c
+spec:
+  rules:
+    - host: echo.fairbank.io
+      http:
+        paths:
+          - backend:
+              serviceName: echo-server
+              servicePort: rpc
