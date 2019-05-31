@@ -89,10 +89,22 @@ func init() {
 			ByDefault: false,
 		},
 		{
-			Name:      "http-port",
+			Name:      "http-gw-port",
 			Usage:     "Port to use for the HTTP gateway interface",
-			FlagKey:   "http-port",
+			FlagKey:   "http-gw-port",
 			ByDefault: 9091,
+		},
+		{
+			Name:      "http-gw-cert",
+			Usage:     "Client certificate used by the HTTP gateway component",
+			FlagKey:   "http-gw-cert",
+			ByDefault: "",
+		},
+		{
+			Name:      "http-gw-key",
+			Usage:     "Private key used by the HTTP gateway component",
+			FlagKey:   "http-gw-key",
+			ByDefault: "",
 		},
 	}
 	if err := cli.SetupCommandParams(rootCmd, params); err != nil {
@@ -162,9 +174,21 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// HTTP gateway configuration
 	if viper.GetBool("http") {
-		fmt.Printf("= HTTP interface enabled on port: %d\n", viper.GetInt("http-port"))
+		fmt.Printf("= HTTP interface enabled on port: %d\n", viper.GetInt("http-gw-port"))
+		var err error
 		gwOpts := rpc.HTTPGatewayOptions{
 			Port: viper.GetInt("http-port"),
+		}
+		// Load custom gateway client cert if provided
+		if viper.GetString("http-gw-cert") != "" {
+			cert, err = ioutil.ReadFile(viper.GetString("http-gw-cert"))
+			if err != nil {
+				return err
+			}
+			key, err = ioutil.ReadFile(viper.GetString("http-gw-key"))
+			if err != nil {
+				return err
+			}
 		}
 		if len(cert) > 0 {
 			gwOpts.ClientCertificate = cert
