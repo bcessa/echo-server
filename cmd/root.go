@@ -37,24 +37,50 @@ func init() {
 		viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 		viper.AutomaticEnv()
 	})
-	// Get default server name
-	name, err := os.Hostname()
-	if err != nil {
-		name = "sample-echo-server.local"
-	}
+
 	// Define server parameters
 	params := []cli.Param{
 		{
 			Name:      "port",
-			Usage:     "TCP port to use for the server",
+			Usage:     "TCP port to use for the main RPC server",
 			FlagKey:   "port",
 			ByDefault: 9090,
 		},
 		{
 			Name:      "name",
-			Usage:     "FQDN server name, if using a certificate it must be valid for it",
+			Usage:     "FQDN server name, must be valid for TLS certificate if used",
 			FlagKey:   "name",
-			ByDefault: name,
+			ByDefault: "localhost",
+		},
+		{
+			Name:      "tls-cert",
+			Usage:     "Certificate to use for TLS communications",
+			FlagKey:   "tls-cert",
+			ByDefault: "",
+		},
+		{
+			Name:      "tls-key",
+			Usage:     "Private key corresponding to the TLS certificate",
+			FlagKey:   "tls-key",
+			ByDefault: "",
+		},
+		{
+			Name:      "tls-ca",
+			Usage:     "Custom Certificate Authority to use for TLS communications",
+			FlagKey:   "tls-ca",
+			ByDefault: "",
+		},
+		{
+			Name:      "client-ca",
+			Usage:     "Custom Certificate Authority to use for client authentication",
+			FlagKey:   "client-ca",
+			ByDefault: "",
+		},
+		{
+			Name:      "client-cert",
+			Usage:     "Require clients to present identity certificates",
+			FlagKey:   "client-cert",
+			ByDefault: false,
 		},
 		{
 			Name:      "http",
@@ -63,28 +89,10 @@ func init() {
 			ByDefault: false,
 		},
 		{
-			Name:      "cert",
-			Usage:     "Certificate to use for TLS communications",
-			FlagKey:   "cert",
-			ByDefault: "",
-		},
-		{
-			Name:      "key",
-			Usage:     "Private key corresponding to the certificate",
-			FlagKey:   "key",
-			ByDefault: "",
-		},
-		{
-			Name:      "ca",
-			Usage:     "Custom Certificate Authority to use",
-			FlagKey:   "ca",
-			ByDefault: "",
-		},
-		{
-			Name:      "client-cert",
-			Usage:     "Require clients to present identity certificates",
-			FlagKey:   "client-cert",
-			ByDefault: false,
+			Name:      "http-port",
+			Usage:     "Port to use for the HTTP gateway interface",
+			FlagKey:   "http-port",
+			ByDefault: 9091,
 		},
 	}
 	if err := cli.SetupCommandParams(rootCmd, params); err != nil {
@@ -96,6 +104,8 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
 	fmt.Printf("= build code: %s\n", buildCode)
 	port := viper.GetInt("port")
+	var cert []byte
+	var key []byte
 
 	// Echo service provider
 	echoService := &rpc.Service{
@@ -105,53 +115,69 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		},
 	}
 
-	// Configure server
+	// Base server configuration
 	srvOptions := []rpc.ServerOption{
 		rpc.WithNetworkInterface(rpc.NetworkInterfaceAll),
 		rpc.WithServerName(viper.GetString("name")),
 		rpc.WithPort(port),
 		rpc.WithService(echoService),
 		rpc.WithLogger(nil),
+		rpc.WithPanicRecovery(),
 	}
-	if viper.GetString("cert") != "" {
+
+	// TLS configuration
+	if viper.GetString("tls-cert") != "" {
 		fmt.Println("= TLS enabled")
-		srvTLS := rpc.ServerTLSConfig{
-			IncludeSystemCAs:   true,
-			CustomCACerts:      [][]byte{},
-			RequireClientCerts: false,
+		var err error
+		srvTLS := rpc.ServerTLSConfig{IncludeSystemCAs: true}
+		if viper.GetString("tls-ca") != "" {
+			ca, err := ioutil.ReadFile(viper.GetString("tls-ca"))
+			if err != nil {
+				return err
+			}
+			srvTLS.CustomCAs = append(srvTLS.CustomCAs, ca)
 		}
-		ca, err := ioutil.ReadFile(viper.GetString("ca"))
+		srvTLS.Cert, err = ioutil.ReadFile(viper.GetString("tls-cert"))
 		if err != nil {
 			return err
 		}
-		srvTLS.Cert, err = ioutil.ReadFile(viper.GetString("cert"))
+		srvTLS.PrivateKey, err = ioutil.ReadFile(viper.GetString("tls-key"))
 		if err != nil {
 			return err
-		}
-		srvTLS.PrivateKey, err = ioutil.ReadFile(viper.GetString("key"))
-		if err != nil {
-			return err
-		}
-		srvTLS.CustomCACerts = append(srvTLS.CustomCACerts, ca)
-		if viper.GetBool("client-cert") {
-			fmt.Println("= expecting client certificates")
-			srvTLS.RequireClientCerts = true
-			srvTLS.ClientCAs = append(srvTLS.ClientCAs, ca)
 		}
 		srvOptions = append(srvOptions, rpc.WithTLS(srvTLS))
+		cert = srvTLS.Cert
+		key = srvTLS.PrivateKey
 	}
+
+	// Cert-based authentication configuration
+	if viper.GetBool("client-cert") {
+		fmt.Println("= enabling certificate-based authentication")
+		clientCA, err := ioutil.ReadFile(viper.GetString("client-ca"))
+		if err != nil {
+			return err
+		}
+		srvOptions = append(srvOptions, rpc.WithAuthByCert(clientCA))
+	}
+
+	// HTTP gateway configuration
 	if viper.GetBool("http") {
-		fmt.Printf("= HTTP interface enabled on port: %d\n", port + 1)
-		srvOptions = append(srvOptions, rpc.WithHTTPGateway(rpc.HTTPGatewayOptions{
-			Port: port + 1,
-		}))
+		fmt.Printf("= HTTP interface enabled on port: %d\n", viper.GetInt("http-port"))
+		gwOpts := rpc.HTTPGatewayOptions{
+			Port: viper.GetInt("http-port"),
+		}
+		if len(cert) > 0 {
+			gwOpts.ClientCertificate = cert
+			gwOpts.ClientPrivateKey = key
+		}
+		srvOptions = append(srvOptions, rpc.WithHTTPGateway(gwOpts))
 	}
+
+	// Start server and wait for interruption signal
 	server, err := rpc.NewServer(srvOptions...)
 	if err != nil {
 		return err
 	}
-
-	// Start server and wait for interruption signal
 	go server.Start()
 	fmt.Printf("= waiting for requests at port: %d\n", port)
 	<-cli.SignalsHandler([]os.Signal{
