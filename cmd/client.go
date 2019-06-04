@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,21 +30,27 @@ var clientCmd = &cobra.Command{
 func init() {
 	params := []cli.Param{
 		{
+			Name:      "tls",
+			Usage:     "Enable TLS communications",
+			FlagKey:   "client.tls",
+			ByDefault: false,
+		},
+		{
 			Name:      "ca",
 			Usage:     "Certificate Authority to use",
-			FlagKey:   "client.ca",
+			FlagKey:   "client.tls.ca",
 			ByDefault: "",
 		},
 		{
 			Name:      "cert",
 			Usage:     "Client TLS certificate",
-			FlagKey:   "client.cert",
+			FlagKey:   "client.tls.cert",
 			ByDefault: "",
 		},
 		{
 			Name:      "key",
 			Usage:     "Client private key",
-			FlagKey:   "client.key",
+			FlagKey:   "client.tls.key",
 			ByDefault: "",
 		},
 		{
@@ -60,9 +67,15 @@ func init() {
 		},
 		{
 			Name:      "server",
-			Usage:     "FQDN server name, must be valid for TLS certificate if used",
+			Usage:     "Server name override, must be a FQDN name, must be valid for TLS certificate if used",
 			FlagKey:   "client.server",
 			ByDefault: "localhost",
+		},
+		{
+			Name:      "auth-token",
+			Usage:     "Use a dummy token as authentication mechanism",
+			FlagKey:   "client.auth.token",
+			ByDefault: "",
 		},
 	}
 	if err := cli.SetupCommandParams(clientCmd, params); err != nil {
@@ -219,6 +232,7 @@ func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
 func runClient(_ *cobra.Command, _ []string) error {
 	var clientCert *tls.Certificate
 	var clientCA []byte = nil
+	var authToken = ""
 	endpoint := viper.GetString("client.rpc")
 	if endpoint == "" {
 		return errors.New("you must specify the RPC endpoint")
@@ -230,52 +244,75 @@ func runClient(_ *cobra.Command, _ []string) error {
 		rpc.WithTimeout(5 * time.Second),
 		rpc.WithCompression(),
 		rpc.WithUserAgent("echo-client/0.1.0"),
+		rpc.WithServerNameOverride(viper.GetString("client.server")),
 	}
 
-	// TLS setup
-	if viper.GetString("client.cert") != "" {
-		fmt.Println("= TLS enabled")
-		var err error
-		clientTLS := rpc.ClientTLSConfig{
-			ServerName:       viper.GetString("client.server"),
-			IncludeSystemCAs: true,
-		}
-		if clientTLS.Certificate, err = ioutil.ReadFile(viper.GetString("client.cert")); err != nil {
-			return err
-		}
-		if clientTLS.PrivateKey, err = ioutil.ReadFile(viper.GetString("client.key")); err != nil {
-			return err
-		}
-		clientCA, err = ioutil.ReadFile(viper.GetString("client.ca"))
+	// Authentication by token
+	if authToken = viper.GetString("client.auth.token"); authToken != "" {
+		log.Printf("authenticating with token: %s\n", authToken)
+		clOpts = append(clOpts, rpc.WithAuthToken(authToken))
+	}
+
+	// Authentication by certificate
+	if viper.GetString("client.tls.cert") != "" {
+		log.Println("authenticating with client certificate")
+		cert, err := ioutil.ReadFile(viper.GetString("client.tls.cert"))
 		if err != nil {
 			return err
 		}
-		clientTLS.CustomCAs = append(clientTLS.CustomCAs, clientCA)
-		clOpts = append(clOpts, rpc.WithClientTLS(clientTLS))
-
-		// Load client certificate
-		if cert, err := rpc.LoadCertificate(clientTLS.Certificate, clientTLS.PrivateKey); err != nil {
+		key, err := ioutil.ReadFile(viper.GetString("client.tls.key"))
+		if err != nil {
 			return err
-		} else {
-			clientCert = &cert
+		}
+		clOpts = append(clOpts, rpc.WithAuthCertificate(cert, key))
+
+		// Load client certificate for HTTP client if required
+		if viper.GetString("client.http") != "" {
+			log.Println("loading client certificate for HTTP client")
+			hc, err := rpc.LoadCertificate(cert, key)
+			if err != nil {
+				return err
+			}
+			clientCert = &hc
 		}
 	}
 
+	// TLS setup
+	if viper.GetBool("client.tls") ||
+		viper.GetString("client.tls.cert") != "" ||
+		viper.GetString("client.tls.ca") != "" {
+		log.Println("TLS enabled")
+		var err error
+		clientTLS := rpc.ClientTLSConfig{
+			IncludeSystemCAs: true,
+		}
+		// Load custom CA, if any
+		if viper.GetString("client.tls.ca") != "" {
+			log.Printf("custom certificate authority: %s\n", viper.GetString("client.tls.ca"))
+			clientCA, err = ioutil.ReadFile(viper.GetString("client.tls.ca"))
+			if err != nil {
+				return err
+			}
+			clientTLS.CustomCAs = append(clientTLS.CustomCAs, clientCA)
+		}
+		clOpts = append(clOpts, rpc.WithClientTLS(clientTLS))
+	}
+
 	// Open connection
-	fmt.Printf("= reaching out to: %s\n", endpoint)
+	log.Printf("reaching out to: %s\n", endpoint)
 	conn, err := rpc.NewClientConnection(endpoint, clOpts...)
 	if err != nil {
 		return err
 	}
-	fmt.Println("= connection ready")
+	log.Println("connection ready")
 
 	// Start interactive client
 	cl := samplev1.NewEchoAPIClient(conn)
 	shell := getShell(cl, getHTTPClient(clientCA, clientCert), viper.GetString("client.http"))
-	shell.Println("= interactive shell")
+	shell.Println("=== interactive shell")
 	shell.Run()
 
 	// Close connection
-	fmt.Println("= closing client")
+	log.Println("closing client")
 	return conn.Close()
 }
