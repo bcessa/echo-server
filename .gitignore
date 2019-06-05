@@ -9,3 +9,4 @@ vendor/**
 ca-roots.crt
 echo-server
 echo-server-linux
+**/*_secret.yaml

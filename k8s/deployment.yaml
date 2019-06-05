@@ -19,15 +19,23 @@ spec:
         version: 0.1.0
     spec:
       restartPolicy: Always
+      volumes:
+        - name: echo-server-secret
+          secret:
+            secretName: echo-server-secret
       containers:
         - name: echo-server
           image: gcr.io/fairbank-io/echo-server:0.1.0
           imagePullPolicy: Always
+          volumeMounts:
+            - name: echo-server-secret
+              mountPath: "/tmp"
+              readOnly: true
           ports:
             - name: rpc
               containerPort: 9090
             - name: http
               containerPort: 9091
-          env:
-            - name: ECHO_HTTP
-              value: "true"
+          args:
+            - "server"
+            - "--http"
