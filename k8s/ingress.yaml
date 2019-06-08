@@ -4,9 +4,10 @@ metadata:
   name: echo-server-http
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/protocol: http
-    ingress.kubernetes.io/content-type-nosniff: "true"
-    ingress.kubernetes.io/browser-xss-filter: "true"
+    traefik.ingress.kubernetes.io/protocol: http
+    traefik.ingress.kubernetes.io/content-type-nosniff: "true"
+    traefik.ingress.kubernetes.io/browser-xss-filter: "true"
+    traefik.ingress.kubernetes.io/content-security-policy: default-src 'self' *.fairbank.io
     traefik.ingress.kubernetes.io/frontend-entry-points: http,https
     traefik.ingress.kubernetes.io/redirect-entry-point: https
     traefik.ingress.kubernetes.io/redirect-permanent: "true"
@@ -30,7 +31,7 @@ metadata:
   name: echo-server-rpc
   annotations:
     kubernetes.io/ingress.class: traefik
-    ingress.kubernetes.io/protocol: h2c
+    traefik.ingress.kubernetes.io/protocol: h2c
     traefik.ingress.kubernetes.io/frontend-entry-points: http
 spec:
   rules:
