@@ -4,9 +4,18 @@ metadata:
   name: echo-server-http
   annotations:
     kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/frontend-entry-points: http
     ingress.kubernetes.io/protocol: http
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/load-balancer-method: drr
+    # traefik.ingress.kubernetes.io/redirect-entry-point: https
+    # traefik.ingress.kubernetes.io/redirect-permanent: "true"
+    # traefik.frontend.passTLSCert: true
+    # traefik.ingress.kubernetes.io/ssl-redirect: true
+    # ingress.kubernetes.io/content-type-nosniff: true
+    # ingress.kubernetes.io/browser-xss-filter: true
 spec:
+  tls:
+    - secretName: cert-fairbank-io
   rules:
     - host: echo.fairbank.io
       http:
@@ -22,8 +31,10 @@ metadata:
   name: echo-server-rpc
   annotations:
     kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/frontend-entry-points: http
     ingress.kubernetes.io/protocol: h2c
+    traefik.ingress.kubernetes.io/frontend-entry-points: http
+    traefik.ingress.kubernetes.io/load-balancer-method: drr
+    # traefik.ingress.kubernetes.io/frontend-entry-points: http
 spec:
   rules:
     - host: echo.fairbank.io
