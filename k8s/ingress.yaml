@@ -5,14 +5,14 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
     ingress.kubernetes.io/protocol: http
+    ingress.kubernetes.io/content-type-nosniff: "true"
+    ingress.kubernetes.io/browser-xss-filter: "true"
     traefik.ingress.kubernetes.io/frontend-entry-points: http,https
-    traefik.ingress.kubernetes.io/load-balancer-method: drr
-    # traefik.ingress.kubernetes.io/redirect-entry-point: https
-    # traefik.ingress.kubernetes.io/redirect-permanent: "true"
+    traefik.ingress.kubernetes.io/load-balancer-method: "drr"
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
     # traefik.frontend.passTLSCert: true
     # traefik.ingress.kubernetes.io/ssl-redirect: true
-    # ingress.kubernetes.io/content-type-nosniff: true
-    # ingress.kubernetes.io/browser-xss-filter: true
 spec:
   tls:
     - secretName: cert-fairbank-io
@@ -33,7 +33,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
     ingress.kubernetes.io/protocol: h2c
     traefik.ingress.kubernetes.io/frontend-entry-points: http
-    traefik.ingress.kubernetes.io/load-balancer-method: drr
+    traefik.ingress.kubernetes.io/load-balancer-method: "drr"
     # traefik.ingress.kubernetes.io/frontend-entry-points: http
 spec:
   rules:
