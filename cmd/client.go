@@ -36,19 +36,19 @@ func init() {
 			ByDefault: false,
 		},
 		{
-			Name:      "ca",
-			Usage:     "Certificate Authority to use",
+			Name:      "tls-ca",
+			Usage:     "Custom certificate authority to use for TLS",
 			FlagKey:   "client.tls.ca",
 			ByDefault: "",
 		},
 		{
-			Name:      "cert",
+			Name:      "client-cert",
 			Usage:     "Client TLS certificate",
 			FlagKey:   "client.tls.cert",
 			ByDefault: "",
 		},
 		{
-			Name:      "key",
+			Name:      "client-key",
 			Usage:     "Client private key",
 			FlagKey:   "client.tls.key",
 			ByDefault: "",
@@ -66,10 +66,10 @@ func init() {
 			ByDefault: "",
 		},
 		{
-			Name:      "server",
+			Name:      "server-override",
 			Usage:     "Server name override, must be a FQDN name, must be valid for TLS certificate if used",
 			FlagKey:   "client.server",
-			ByDefault: "localhost",
+			ByDefault: "",
 		},
 		{
 			Name:      "auth-token",
@@ -238,13 +238,17 @@ func runClient(_ *cobra.Command, _ []string) error {
 		return errors.New("you must specify the RPC endpoint")
 	}
 
-	// Configure client connection
+	// Base client configuration
 	clOpts := []rpc.ClientOption{
 		rpc.WaitForReady(),
 		rpc.WithTimeout(5 * time.Second),
 		rpc.WithCompression(),
 		rpc.WithUserAgent("echo-client/0.1.0"),
-		rpc.WithServerNameOverride(viper.GetString("client.server")),
+	}
+
+	// Server name override, should only be used while testing
+	if viper.GetString("client.server") != "" {
+		clOpts = append(clOpts, rpc.WithServerNameOverride("client.server"))
 	}
 
 	// Authentication by token
@@ -255,6 +259,9 @@ func runClient(_ *cobra.Command, _ []string) error {
 
 	// Authentication by certificate
 	if viper.GetString("client.tls.cert") != "" {
+		if !viper.GetBool("client.tls") {
+			return errors.New("client certificates can only be used with TLS connections")
+		}
 		log.Println("authenticating with client certificate")
 		cert, err := ioutil.ReadFile(viper.GetString("client.tls.cert"))
 		if err != nil {
@@ -278,9 +285,7 @@ func runClient(_ *cobra.Command, _ []string) error {
 	}
 
 	// TLS setup
-	if viper.GetBool("client.tls") ||
-		viper.GetString("client.tls.cert") != "" ||
-		viper.GetString("client.tls.ca") != "" {
+	if viper.GetBool("client.tls") {
 		log.Println("TLS enabled")
 		var err error
 		clientTLS := rpc.ClientTLSConfig{
