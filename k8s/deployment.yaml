@@ -46,3 +46,5 @@ spec:
               value: "/tmp/tls-cert.crt"
             - name: ECHO_SERVER_TLS_KEY
               value: "/tmp/tls-key.pem"
+            - name: ECHO_SERVER_AUTH_TOKEN
+              value: "foobar"
