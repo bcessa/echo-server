@@ -4,7 +4,7 @@ metadata:
   name: echo-server-http
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/backend-protocol: "http"
+    nginx.ingress.kubernetes.io/backend-protocol: "https"
     nginx.ingress.kubernetes.io/load-balance: "ewma"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -33,7 +33,7 @@ metadata:
   name: echo-server-rpc
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/backend-protocol: "grpc"
+    nginx.ingress.kubernetes.io/backend-protocol: "grpcs"
     nginx.ingress.kubernetes.io/load-balance: "ewma"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/limit-rps: "10"

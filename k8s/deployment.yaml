@@ -39,3 +39,10 @@ spec:
           args:
             - "server"
             - "--http"
+          env:
+            - name: ECHO_SERVER_TLS_CA
+              value: "/tmp/tls-ca.crt"
+            - name: ECHO_SERVER_TLS_CERT
+              value: "/tmp/tls-cert.crt"
+            - name: ECHO_SERVER_TLS_KEY
+              value: "/tmp/tls-key.pem"
