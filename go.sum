@@ -39,6 +39,8 @@ github.com/bryk-io/x v0.0.0-20190530213545-718a7c371536 h1:qOJH+tykALkf/UPol3BoK
 github.com/bryk-io/x v0.0.0-20190530213545-718a7c371536/go.mod h1:dGBiTbSXsLdpipbLhKkZDZRmU22Gor+s6euuxzwDXXE=
 github.com/bryk-io/x v0.0.0-20190603105936-225f2b1a5eb0 h1:IA5nGywQbxuKweoPms3h0yysomL3VftDr7JL2wiplZs=
 github.com/bryk-io/x v0.0.0-20190603105936-225f2b1a5eb0/go.mod h1:0zMBLe9iT03/2S2ltXo4bxHgI/Fp6o8fsEnBZ6i0OKc=
+github.com/bryk-io/x v0.0.0-20190611172044-70298fee2853 h1:FEeyL+PtodChSN2QcBfbbb7MyqVuZZrOuLfC8cHSnP8=
+github.com/bryk-io/x v0.0.0-20190611172044-70298fee2853/go.mod h1:0zMBLe9iT03/2S2ltXo4bxHgI/Fp6o8fsEnBZ6i0OKc=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20160729034951-a0c5244a21f4/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
