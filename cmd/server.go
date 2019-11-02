@@ -209,7 +209,9 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	go server.Start()
+	go func() {
+		_ = server.Start()
+	}()
 	log.Printf("waiting for requests at port: %d\n", port)
 	<-cli.SignalsHandler([]os.Signal{
 		syscall.SIGHUP,

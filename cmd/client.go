@@ -142,7 +142,7 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 			if _, err := cl.Slow(context.TODO(), &types.Empty{}); err != nil {
 				c.Printf("error: %s\n", err.Error())
 			} else {
-				c.Printf("latency: %dms\n", int64(time.Now().Sub(start) / time.Millisecond))
+				c.Printf("latency: %dms\n", int64(time.Since(start) / time.Millisecond))
 			}
 		},
 	})
@@ -232,7 +232,7 @@ func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
 func runClient(_ *cobra.Command, _ []string) error {
 	var clientCert *tls.Certificate
 	var clientCA []byte = nil
-	var authToken = ""
+	authToken := viper.GetString("client.auth.token")
 	endpoint := viper.GetString("client.rpc")
 	if endpoint == "" {
 		return errors.New("you must specify the RPC endpoint")
@@ -252,7 +252,7 @@ func runClient(_ *cobra.Command, _ []string) error {
 	}
 
 	// Authentication by token
-	if authToken = viper.GetString("client.auth.token"); authToken != "" {
+	if authToken != "" {
 		log.Printf("authenticating with token: %s\n", authToken)
 		clOpts = append(clOpts, rpc.WithAuthToken(authToken))
 	}
