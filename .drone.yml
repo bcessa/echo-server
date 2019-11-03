@@ -1,0 +1,33 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: test
+  pull: if-not-exists
+  image: golang:1.12
+  commands:
+  - git config --global url."https://$GITHUB_USER:$GITHUB_ACCESS_TOKEN@github.com".insteadOf "https://github.com"
+  - go build
+  - go test -race -cover -v -failfast ./...
+  environment:
+    GITHUB_ACCESS_TOKEN:
+      from_secret: github-access-token
+    GITHUB_USER:
+      from_secret: github-user
+    GOARCH: amd64
+    GOOS: linux
+
+image_pull_secrets:
+- bryk-registry
+
+trigger:
+  branch:
+  - master
+
+...
