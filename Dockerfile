@@ -4,9 +4,9 @@ ARG VERSION
 LABEL maintainer="Ben Cessa <ben@pixative.com>"
 LABEL version=${VERSION}
 
-COPY echo-server-linux /
+COPY echo-service-linux /
 COPY ca-roots.crt /etc/ssl/certs/
 
 EXPOSE 9090 9091
 
-ENTRYPOINT ["/echo-server-linux"]
+ENTRYPOINT ["/echo-service-linux"]

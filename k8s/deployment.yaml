@@ -1,34 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echo-server
+  name: echo-service
   labels:
-    app: echo-server
-    version: 0.1.0
+    app: echo-service
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: echo-server
-      version: 0.1.0
+      app: echo-service
   template:
     metadata:
-      name: echo-server
+      name: echo-service
       labels:
-        app: echo-server
-        version: 0.1.0
+        app: echo-service
     spec:
       restartPolicy: Always
       volumes:
-        - name: echo-server-secret
+        - name: cert-pixative
           secret:
-            secretName: echo-server-secret
+            secretName: cert-pixative
       containers:
-        - name: echo-server
-          image: gcr.io/fairbank-io/echo-server:0.1.0
+        - name: echo-service
+          image: bcessa/echo-service:0.1.0
           imagePullPolicy: Always
           volumeMounts:
-            - name: echo-server-secret
+            - name: cert-pixative
               mountPath: "/tmp"
               readOnly: true
           ports:
@@ -40,11 +37,7 @@ spec:
             - "server"
             - "--http"
           env:
-            - name: ECHO_SERVER_TLS_CA
-              value: "/tmp/tls-ca.crt"
             - name: ECHO_SERVER_TLS_CERT
-              value: "/tmp/tls-cert.crt"
+              value: "/tmp/tls.crt"
             - name: ECHO_SERVER_TLS_KEY
-              value: "/tmp/tls-key.pem"
-            - name: ECHO_SERVER_AUTH_TOKEN
-              value: "foobar"
+              value: "/tmp/tls.key"

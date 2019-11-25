@@ -27,9 +27,11 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ready := make(chan bool)
 	go func() {
-		_ = srv.Start()
+		_ = srv.Start(ready)
 	}()
+	<-ready
 
 	conn, err := rpc.NewClientConnection("127.0.0.1:8989", rpc.WithClientLogger(nil))
 	if err != nil {

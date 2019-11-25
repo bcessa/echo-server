@@ -66,10 +66,10 @@ func init() {
 			ByDefault: "",
 		},
 		{
-			Name:      "server-override",
-			Usage:     "Server name override, must be a FQDN name, must be valid for TLS certificate if used",
-			FlagKey:   "client.server",
-			ByDefault: "",
+			Name:      "insecure",
+			Usage:     "Consider valid any certificate provided by the server",
+			FlagKey:   "client.insecure",
+			ByDefault: false,
 		},
 		{
 			Name:      "auth-token",
@@ -246,11 +246,6 @@ func runClient(_ *cobra.Command, _ []string) error {
 		rpc.WithUserAgent("echo-client/0.1.0"),
 	}
 
-	// Server name override, should only be used while testing
-	if viper.GetString("client.server") != "" {
-		clOpts = append(clOpts, rpc.WithServerNameOverride("client.server"))
-	}
-
 	// Authentication by token
 	if authToken != "" {
 		log.Printf("authenticating with token: %s\n", authToken)
@@ -287,13 +282,20 @@ func runClient(_ *cobra.Command, _ []string) error {
 	// TLS setup
 	if viper.GetBool("client.tls") {
 		log.Println("TLS enabled")
-		var err error
 		clientTLS := rpc.ClientTLSConfig{
 			IncludeSystemCAs: true,
 		}
+
+		// Insecure client
+		if viper.GetBool("client.insecure") {
+			log.Println("insecure client, any certificate provided by the server will be considered valid")
+			clOpts = append(clOpts, rpc.WithInsecureSkipVerify())
+		}
+
 		// Load custom CA, if any
 		if viper.GetString("client.tls.ca") != "" {
 			log.Printf("custom certificate authority: %s\n", viper.GetString("client.tls.ca"))
+			var err error
 			clientCA, err = ioutil.ReadFile(viper.GetString("client.tls.ca"))
 			if err != nil {
 				return err

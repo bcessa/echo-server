@@ -1,7 +1,7 @@
 .PHONY: proto
 default: help
-DOCKER_IMAGE_NAME=bcessa/echo-server
-BINARY_NAME=echo-server
+DOCKER_IMAGE_NAME=bcessa/echo-service
+BINARY_NAME=echo-service
 VERSION_TAG=0.1.0
 
 # Include build code at compile time

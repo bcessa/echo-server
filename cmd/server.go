@@ -30,12 +30,6 @@ func init() {
 			ByDefault: 9090,
 		},
 		{
-			Name:      "name",
-			Usage:     "Server name override, must be a FQDN name, must be valid for TLS certificate if used",
-			FlagKey:   "server.name",
-			ByDefault: "localhost",
-		},
-		{
 			Name:      "tls-cert",
 			Usage:     "Certificate to use for TLS communications",
 			FlagKey:   "server.tls.cert",
@@ -66,18 +60,6 @@ func init() {
 			ByDefault: 9091,
 		},
 		{
-			Name:      "auth-by-token",
-			Usage:     "Used a dummy token for authentication",
-			FlagKey:   "server.auth.token",
-			ByDefault: "",
-		},
-		{
-			Name:      "auth-by-cert",
-			Usage:     "Provide the CA used to verify client certificates as credentials",
-			FlagKey:   "server.auth.ca",
-			ByDefault: "",
-		},
-		{
 			Name:      "http-cert",
 			Usage:     "Client certificate used by the HTTP gateway component",
 			FlagKey:   "server.http.cert",
@@ -87,6 +69,18 @@ func init() {
 			Name:      "http-key",
 			Usage:     "Private key used by the HTTP gateway component",
 			FlagKey:   "server.http.key",
+			ByDefault: "",
+		},
+		{
+			Name:      "auth-by-token",
+			Usage:     "Used a dummy token for authentication",
+			FlagKey:   "server.auth.token",
+			ByDefault: "",
+		},
+		{
+			Name:      "auth-by-cert",
+			Usage:     "Provide the CA used to verify client certificates as credentials",
+			FlagKey:   "server.auth.ca",
 			ByDefault: "",
 		},
 	}
@@ -174,7 +168,8 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		gwOpts := rpc.HTTPGatewayOptions{
 			Port: viper.GetInt("server.http.port"),
 			ClientOptions: []rpc.ClientOption{
-				rpc.WithServerNameOverride(viper.GetString("server.name")),
+				// Internal connection from HTTP proxy to RPC server takes any provided certificate as valid
+				rpc.WithInsecureSkipVerify(),
 			},
 		}
 
@@ -205,13 +200,17 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	// Start server and wait for interruption signal
+	ready := make(chan bool)
 	server, err := rpc.NewServer(srvOptions...)
 	if err != nil {
 		return err
 	}
 	go func() {
-		_ = server.Start()
+		if err := server.Start(ready); err != nil {
+			log.Println("failed to start server:", err)
+		}
 	}()
+	<-ready
 	log.Printf("waiting for requests at port: %d\n", port)
 	<-cli.SignalsHandler([]os.Signal{
 		syscall.SIGHUP,
