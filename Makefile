@@ -1,6 +1,6 @@
 .PHONY: proto
 default: help
-DOCKER_IMAGE_NAME=echo-server
+DOCKER_IMAGE_NAME=bcessa/echo-server
 BINARY_NAME=echo-server
 VERSION_TAG=0.1.0
 

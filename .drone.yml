@@ -10,7 +10,7 @@ platform:
 steps:
 - name: test
   pull: if-not-exists
-  image: golang:1.12
+  image: golang:1.12.9
   commands:
   - git config --global url."https://$GITHUB_USER:$GITHUB_ACCESS_TOKEN@github.com".insteadOf "https://github.com"
   - go build
@@ -31,5 +31,9 @@ trigger:
   - master
   event:
   - push
+
+---
+kind: signature
+hmac: 082a949a44a08c7eacf6fa850c2328b5e40e868a4dfeb2aea2a9d5fe8897fe88
 
 ...
