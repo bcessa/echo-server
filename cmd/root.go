@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var buildCode = ""
-
 var rootCmd = &cobra.Command{
 	Use:   "echo-server",
 	Short: "Sample echo server",

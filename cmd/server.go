@@ -92,7 +92,6 @@ func init() {
 
 func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
-	log.Printf("build code: %s\n", buildCode)
 	port := viper.GetInt("server.port")
 
 	// Echo service provider
@@ -208,7 +207,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		srvOptions = append(srvOptions, rpc.WithHTTPGateway(gw))
 	}
 
-	// Start server and wait for interruption signal
+	// Start server
 	ready := make(chan bool)
 	server, err := rpc.NewServer(srvOptions...)
 	if err != nil {
@@ -224,7 +223,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	<-ready
 	log.Printf("waiting for requests at port: %d\n", port)
 
-	// Catch stop signals and quit
+	// Catch interruption signals and quit
 	<-cli.SignalsHandler([]os.Signal{
 		syscall.SIGHUP,
 		syscall.SIGINT,

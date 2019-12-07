@@ -4,8 +4,13 @@ DOCKER_IMAGE_NAME=bcessa/echo-service
 BINARY_NAME=echo-service
 VERSION_TAG=0.1.0
 
-# Include build code at compile time
-LD_FLAGS="-X github.com/bcessa/echo-server/cmd.buildCode=`git log --pretty=format:'%H' -n1`"
+# Linker tags
+# https://golang.org/cmd/link/
+LD_FLAGS="\
+-X 'github.com/bcessa/echo-server/cmd.coreVersion=$(VERSION_TAG)' \
+-X 'github.com/bcessa/echo-server/cmd.buildTimestamp=`date +'%s'`' \
+-X 'github.com/bcessa/echo-server/cmd.buildCode=`git log --pretty=format:'%H' -n1`' \
+"
 
 help: ## Display available make targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-16s\033[0m %s\n", $$1, $$2}'
