@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bryk-io/x/net/rpc"
-	samplev1 "github.com/bryk-io/x/net/rpc/sample/v1"
 	"github.com/gogo/protobuf/types"
+	"go.bryk.io/x/net/rpc"
+	samplev1 "go.bryk.io/x/net/rpc/sample/v1"
 	"google.golang.org/grpc"
 )
 

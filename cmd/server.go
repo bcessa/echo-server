@@ -6,11 +6,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/bryk-io/x/cli"
-	"github.com/bryk-io/x/net/rpc"
-	samplev1 "github.com/bryk-io/x/net/rpc/sample/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.bryk.io/x/cli"
+	"go.bryk.io/x/net/rpc"
+	samplev1 "go.bryk.io/x/net/rpc/sample/v1"
 	"google.golang.org/grpc"
 )
 
@@ -165,12 +165,11 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// HTTP gateway configuration
 	if viper.GetBool("server.http") {
 		log.Printf("HTTP interface enabled on port: %d\n", viper.GetInt("server.http.port"))
-		gwOpts := rpc.HTTPGatewayOptions{
-			Port: viper.GetInt("server.http.port"),
-			ClientOptions: []rpc.ClientOption{
-				// Internal connection from HTTP proxy to RPC server takes any provided certificate as valid
-				rpc.WithInsecureSkipVerify(),
-			},
+
+		// Gateway internal client options
+		gwCl := []rpc.ClientOption{
+			// Internal connection from HTTP proxy to RPC server takes any provided certificate as valid
+			rpc.WithInsecureSkipVerify(),
 		}
 
 		// Server is using TLS
@@ -179,7 +178,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 			if tlsCA != nil {
 				gwTLS.CustomCAs = append(gwTLS.CustomCAs, tlsCA)
 			}
-			gwOpts.ClientOptions = append(gwOpts.ClientOptions, rpc.WithClientTLS(gwTLS))
+			gwCl = append(gwCl, rpc.WithClientTLS(gwTLS))
 		}
 
 		// Load custom gateway client cert if provided
@@ -194,9 +193,19 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 			if err != nil {
 				return err
 			}
-			gwOpts.ClientOptions = append(gwOpts.ClientOptions, rpc.WithAuthCertificate(cert, key))
+			gwCl = append(gwCl, rpc.WithAuthCertificate(cert, key))
 		}
-		srvOptions = append(srvOptions, rpc.WithHTTPGateway(gwOpts))
+
+		// Get gateway instance
+		gwOpts := []rpc.HTTPGatewayOption{
+			rpc.WithGatewayPort(viper.GetInt("server.http.port")),
+			rpc.WithClientOptions(gwCl),
+		}
+		gw, err := rpc.NewHTTPGateway(gwOpts...)
+		if err != nil {
+			return err
+		}
+		srvOptions = append(srvOptions, rpc.WithHTTPGateway(gw))
 	}
 
 	// Start server and wait for interruption signal
@@ -210,8 +219,12 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 			log.Println("failed to start server:", err)
 		}
 	}()
+
+	// Wait for server to be ready
 	<-ready
 	log.Printf("waiting for requests at port: %d\n", port)
+
+	// Catch stop signals and quit
 	<-cli.SignalsHandler([]os.Signal{
 		syscall.SIGHUP,
 		syscall.SIGINT,

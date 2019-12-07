@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
-	"github.com/bryk-io/x/cli"
-	"github.com/bryk-io/x/net/rpc"
-	samplev1 "github.com/bryk-io/x/net/rpc/sample/v1"
 	"github.com/gogo/protobuf/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.bryk.io/x/cli"
+	"go.bryk.io/x/net/rpc"
+	samplev1 "go.bryk.io/x/net/rpc/sample/v1"
 )
 
 var clientCmd = &cobra.Command{

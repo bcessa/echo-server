@@ -7,6 +7,16 @@ VERSION_TAG=0.1.0
 # Include build code at compile time
 LD_FLAGS="-X github.com/bcessa/echo-server/cmd.buildCode=`git log --pretty=format:'%H' -n1`"
 
+help: ## Display available make targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-16s\033[0m %s\n", $$1, $$2}'
+
+clean: ## Download and compile all dependencies and intermediary products
+	@-rm -rf vendor
+	go mod tidy
+	go mod verify
+	go mod download
+	go mod vendor
+
 build: ## Build for the default architecture in use
 	go build -v -ldflags $(LD_FLAGS) -o $(BINARY_NAME)
 
@@ -33,6 +43,3 @@ test: ## Run all tests excluding the vendor dependencies
 
 	# Unit tests
 	go test -race -cover -v -failfast ./...
-
-help: ## Display available make targets
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-16s\033[0m %s\n", $$1, $$2}'
