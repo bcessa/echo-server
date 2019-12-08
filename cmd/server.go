@@ -30,6 +30,12 @@ func init() {
 			ByDefault: 9090,
 		},
 		{
+			Name:      "monitoring",
+			Usage:     "Produce metrics that can be consumed by instrumentation services (requires HTTP)",
+			FlagKey:   "server.monitoring",
+			ByDefault: false,
+		},
+		{
 			Name:      "tls-cert",
 			Usage:     "Certificate to use for TLS communications",
 			FlagKey:   "server.tls.cert",
@@ -205,6 +211,16 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 			return err
 		}
 		srvOptions = append(srvOptions, rpc.WithHTTPGateway(gw))
+
+		// Enable monitoring
+		if viper.GetBool("server.monitoring") {
+			log.Println("monitoring enabled on endpoint: /metrics")
+			srvOptions = append(srvOptions, rpc.WithMonitoring(rpc.MonitoringOptions{
+				IncludeHistograms:   true,
+				UseGoCollector:      true,
+				UseProcessCollector: true,
+			}))
+		}
 	}
 
 	// Start server

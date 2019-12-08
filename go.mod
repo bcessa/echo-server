@@ -10,8 +10,8 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/spf13/cobra v0.0.5
-	github.com/spf13/viper v1.5.0
-	go.bryk.io/x v0.0.0-20191206191545-f9a10f6a12ad
+	github.com/spf13/viper v1.6.1
+	go.bryk.io/x v0.0.0-20191208003651-a7c8ee8abcf9
 	google.golang.org/grpc v1.23.0
 )
 
