@@ -58,6 +58,7 @@ func init() {
 			Usage:     "RPC server endpoint",
 			FlagKey:   "client.rpc",
 			ByDefault: "",
+			Short:     "s",
 		},
 		{
 			Name:      "http",

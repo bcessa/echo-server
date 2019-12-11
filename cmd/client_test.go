@@ -15,7 +15,7 @@ func TestClient(t *testing.T) {
 	srvOptions := []rpc.ServerOption{
 		rpc.WithNetworkInterface(rpc.NetworkInterfaceAll),
 		rpc.WithPort(8989),
-		rpc.WithLogger(nil),
+		rpc.WithLogger(rpc.LoggingOptions{}),
 		rpc.WithPanicRecovery(),
 		rpc.WithService(&rpc.Service{
 			Setup: func(server *grpc.Server) {
@@ -33,7 +33,7 @@ func TestClient(t *testing.T) {
 	}()
 	<-ready
 
-	conn, err := rpc.NewClientConnection("127.0.0.1:8989", rpc.WithClientLogger(nil))
+	conn, err := rpc.NewClientConnection("127.0.0.1:8989", rpc.WithClientLogger(rpc.LoggingOptions{}))
 	if err != nil {
 		t.Error(err)
 	}

@@ -1,17 +1,22 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"syscall"
+	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"go.bryk.io/x/cli"
 	"go.bryk.io/x/net/rpc"
 	samplev1 "go.bryk.io/x/net/rpc/sample/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 var serverCmd = &cobra.Command{
@@ -111,27 +116,50 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// TLS custom CA
 	var tlsCA []byte = nil
 
+	// Logger
+	formatter := &prefixed.TextFormatter{
+		FullTimestamp: true,
+		TimestampFormat: time.StampMilli,
+	}
+	formatter.SetColorScheme(&prefixed.ColorScheme{
+		DebugLevelStyle: "black",
+		TimestampStyle:  "white+h",
+	})
+	ll := logrus.New()
+	ll.SetFormatter(formatter)
+	le := logrus.NewEntry(ll)
+
 	// Base server configuration
 	srvOptions := []rpc.ServerOption{
 		rpc.WithNetworkInterface(rpc.NetworkInterfaceAll),
 		rpc.WithPort(port),
 		rpc.WithService(echoService),
-		rpc.WithLogger(nil),
+		rpc.WithInputValidation(),
 		rpc.WithPanicRecovery(),
+		rpc.WithLogger(rpc.LoggingOptions{
+			Mode:   rpc.LOGRUS,
+			Logrus: le,
+			FilterMethods: []string{
+				"bryk.x.net.rpc.sample.v1.EchoAPI/Ping",
+			},
+		}),
 	}
 
 	// Authentication by token
 	if token := viper.GetString("server.auth.token"); token != "" {
-		log.Printf("enabling token validation with dummy value: %s\n", token)
-		tv := rpc.WithAuthByTokenValidator(func(t string) bool {
-			return token == t
+		le.Infof("enabling token validation with dummy value: %s", token)
+		tv := rpc.WithAuthByTokenValidator(func(t string) (code codes.Code, s string) {
+			if token != t {
+				return codes.Unauthenticated, fmt.Sprintf("invalid token provided '%s'", t)
+			}
+			return codes.OK, ""
 		})
 		srvOptions = append(srvOptions, tv)
 	}
 
 	// Authentication by certificate
 	if clientCA := viper.GetString("server.auth.ca"); clientCA != "" {
-		log.Printf("enabling certificate-based authentication: %s\n", clientCA)
+		le.Infof("enabling certificate-based authentication: %s", clientCA)
 		ca, err := ioutil.ReadFile(clientCA)
 		if err != nil {
 			return err
@@ -141,15 +169,15 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// TLS configuration
 	if viper.GetString("server.tls.cert") != "" {
-		log.Println("TLS enabled")
+		le.Info("TLS enabled")
 		var err error
 		srvTLS := rpc.ServerTLSConfig{IncludeSystemCAs: true}
-		log.Printf("loading certifiate: %s\n", viper.GetString("server.tls.cert"))
+		le.Debugf("loading certificate: %s", viper.GetString("server.tls.cert"))
 		srvTLS.Cert, err = ioutil.ReadFile(viper.GetString("server.tls.cert"))
 		if err != nil {
 			return err
 		}
-		log.Printf("loading private key: %s\n", viper.GetString("server.tls.key"))
+		le.Debugf("loading private key: %s", viper.GetString("server.tls.key"))
 		srvTLS.PrivateKey, err = ioutil.ReadFile(viper.GetString("server.tls.key"))
 		if err != nil {
 			return err
@@ -157,7 +185,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 		// Load custom CA if used
 		if viper.GetString("server.tls.ca") != "" {
-			log.Printf("loading CA: %s\n", viper.GetString("server.tls.ca"))
+			le.Debugf("loading CA: %s", viper.GetString("server.tls.ca"))
 			tlsCA, err = ioutil.ReadFile(viper.GetString("server.tls.ca"))
 			if err != nil {
 				return err
@@ -169,7 +197,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// HTTP gateway configuration
 	if viper.GetBool("server.http") {
-		log.Printf("HTTP interface enabled on port: %d\n", viper.GetInt("server.http.port"))
+		le.Infof("HTTP interface enabled on port: %d", viper.GetInt("server.http.port"))
 
 		// Gateway internal client options
 		gwCl := []rpc.ClientOption{
@@ -188,12 +216,12 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 		// Load custom gateway client cert if provided
 		if viper.GetString("server.http.cert") != "" {
-			log.Printf("gateway client certificate: %s\n", viper.GetString("server.http.cert"))
+			le.Debugf("gateway client certificate: %s", viper.GetString("server.http.cert"))
 			cert, err := ioutil.ReadFile(viper.GetString("server.http.cert"))
 			if err != nil {
 				return err
 			}
-			log.Printf("gateway private key: %s\n", viper.GetString("server.http.key"))
+			le.Debugf("gateway private key: %s", viper.GetString("server.http.key"))
 			key, err := ioutil.ReadFile(viper.GetString("server.http.key"))
 			if err != nil {
 				return err
@@ -214,7 +242,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 		// Enable monitoring
 		if viper.GetBool("server.monitoring") {
-			log.Println("monitoring enabled on endpoint: /metrics")
+			le.Info("monitoring enabled on endpoint: /metrics")
 			srvOptions = append(srvOptions, rpc.WithMonitoring(rpc.MonitoringOptions{
 				IncludeHistograms:   true,
 				UseGoCollector:      true,
@@ -237,7 +265,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 	// Wait for server to be ready
 	<-ready
-	log.Printf("waiting for requests at port: %d\n", port)
+	le.Infof("waiting for requests at port: %d", port)
 
 	// Catch interruption signals and quit
 	<-cli.SignalsHandler([]os.Signal{
@@ -247,7 +275,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		syscall.SIGQUIT,
 		os.Interrupt,
 	})
-	log.Println("server closed")
+	le.Warn("server closed")
 	_ = server.Stop()
 	return nil
 }

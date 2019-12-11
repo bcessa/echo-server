@@ -9,10 +9,13 @@ require (
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
-	go.bryk.io/x v0.0.0-20191208003651-a7c8ee8abcf9
-	google.golang.org/grpc v1.23.0
+	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	go.bryk.io/x v0.0.0-20191211153725-9a398669a017
+	google.golang.org/grpc v1.25.1
 )
 
 replace github.com/cloudflare/cfssl => github.com/bryk-io/cfssl v0.0.0-20190303174050-7d50b68e4142
