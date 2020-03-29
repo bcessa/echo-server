@@ -6,11 +6,10 @@ VERSION_TAG=0.1.0
 
 # Linker tags
 # https://golang.org/cmd/link/
-LD_FLAGS="\
--X 'github.com/bcessa/echo-server/cmd.coreVersion=$(VERSION_TAG)' \
--X 'github.com/bcessa/echo-server/cmd.buildTimestamp=`date +'%s'`' \
--X 'github.com/bcessa/echo-server/cmd.buildCode=`git log --pretty=format:'%H' -n1`' \
-"
+LD_FLAGS += -s -w
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.coreVersion=$(VERSION_TAG)
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildTimestamp=$(shell date +'%s')
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildCode=$(shell git log --pretty=format:'%H' -n1)
 
 help: ## Display available make targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-16s\033[0m %s\n", $$1, $$2}'
@@ -27,10 +26,10 @@ updates: ## List available updates for direct dependencies
 	go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all 2> /dev/null
 
 build: ## Build for the default architecture in use
-	go build -v -ldflags $(LD_FLAGS) -o $(BINARY_NAME)
+	go build -v -ldflags '$(LD_FLAGS)' -o $(BINARY_NAME)
 
 linux: ## Build for linux systems
-	GOOS=linux GOARCH=amd64 go build -v -ldflags $(LD_FLAGS) -o $(BINARY_NAME)-linux
+	GOOS=linux GOARCH=amd64 go build -v -ldflags '$(LD_FLAGS)' -o $(BINARY_NAME)-linux
 
 docker: ## Build docker image
 	make linux

@@ -108,7 +108,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Echo service provider
 	echoService := &rpc.Service{
 		GatewaySetup: samplev1.RegisterEchoAPIHandlerFromEndpoint,
-		Setup: func(server *grpc.Server) {
+		ServerSetup: func(server *grpc.Server) {
 			samplev1.RegisterEchoAPIServer(server, &samplev1.EchoHandler{})
 		},
 	}
@@ -148,7 +148,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Authentication by token
 	if token := viper.GetString("server.auth.token"); token != "" {
 		le.Infof("enabling token validation with dummy value: %s", token)
-		tv := rpc.WithAuthByTokenValidator(func(t string) (code codes.Code, s string) {
+		tv := rpc.WithAuthByToken(func(t string) (code codes.Code, s string) {
 			if token != t {
 				return codes.Unauthenticated, fmt.Sprintf("invalid token provided '%s'", t)
 			}
@@ -242,6 +242,9 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 
 		// Enable monitoring
 		if viper.GetBool("server.monitoring") {
+			// Locally run dev instances of prometheus and grafana for testing.
+			// docker run -d --rm --name prometheus -p 4000:9090 -v monitor.yaml:/etc/prometheus/prometheus.yml prom/prometheus
+			// docker run -d --rm --name grafana -p 3000:3000 -e "GF_SECURITY_ADMIN_PASSWORD=password" grafana/grafana
 			le.Info("monitoring enabled on endpoint: /metrics")
 			srvOptions = append(srvOptions, rpc.WithMonitoring(rpc.MonitoringOptions{
 				IncludeHistograms:   true,
@@ -276,6 +279,6 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		os.Interrupt,
 	})
 	le.Warn("server closed")
-	_ = server.Stop()
+ 	_ = server.Stop(true)
 	return nil
 }
