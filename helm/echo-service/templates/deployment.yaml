@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "echo-service.fullname" . }}
+  labels:
+    {{- include "echo-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "echo-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "echo-service.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "echo-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - name: cert
+          secret:
+            secretName: {{ .Values.service.certificate }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: cert
+              mountPath: "/tmp"
+              readOnly: true
+          args:
+            - "server"
+            - "--http"
+          ports:
+            - name: main
+              containerPort: 9090
+          env:
+            - name: ECHO_SERVER_TLS_CERT
+              value: "/tmp/tls.crt"
+            - name: ECHO_SERVER_TLS_KEY
+              value: "/tmp/tls.key"
+            - name: ECHO_SERVER_HTTP_PORT
+              value: "9090"
+          # Use simple status checks to avoid authentication issues
+          livenessProbe:
+            exec:
+              command:
+                - uptime
+          readinessProbe:
+            exec:
+              command:
+                - uptime
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

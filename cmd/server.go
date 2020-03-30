@@ -94,6 +94,12 @@ func init() {
 			FlagKey:   "server.auth.ca",
 			ByDefault: "",
 		},
+		{
+			Name:      "log-json",
+			Usage:     "Log messages in JSON format (text by default)",
+			FlagKey:   "server.log.json",
+			ByDefault: false,
+		},
 	}
 	if err := cli.SetupCommandParams(serverCmd, params); err != nil {
 		panic(err)
@@ -117,16 +123,20 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	var tlsCA []byte = nil
 
 	// Logger
-	formatter := &prefixed.TextFormatter{
-		FullTimestamp: true,
-		TimestampFormat: time.StampMilli,
-	}
-	formatter.SetColorScheme(&prefixed.ColorScheme{
-		DebugLevelStyle: "black",
-		TimestampStyle:  "white+h",
-	})
 	ll := logrus.New()
-	ll.SetFormatter(formatter)
+	if viper.GetBool("server.log.json") {
+		ll.SetFormatter(new(logrus.JSONFormatter))
+	} else {
+		formatter := &prefixed.TextFormatter{
+			FullTimestamp: true,
+			TimestampFormat: time.StampMilli,
+		}
+		formatter.SetColorScheme(&prefixed.ColorScheme{
+			DebugLevelStyle: "black",
+			TimestampStyle:  "white+h",
+		})
+		ll.SetFormatter(formatter)
+	}
 	le := logrus.NewEntry(ll)
 
 	// Base server configuration

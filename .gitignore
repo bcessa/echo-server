@@ -7,8 +7,8 @@ vendor/**
 
 # Binaries and support files
 ca-roots.crt
-echo-service
-echo-service-linux
+/echo-service
+/echo-service-linux
 **/*_secret.yaml
 
 # Secret files
