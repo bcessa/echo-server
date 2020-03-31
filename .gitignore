@@ -5,6 +5,9 @@
 # Deps
 vendor/**
 
+# Temporary files
+/tmp
+
 # Binaries and support files
 ca-roots.crt
 /echo-service

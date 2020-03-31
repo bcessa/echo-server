@@ -125,7 +125,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Logger
 	ll := logrus.New()
 	if viper.GetBool("server.log.json") {
-		ll.SetFormatter(new(logrus.JSONFormatter))
+		ll.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		formatter := &prefixed.TextFormatter{
 			FullTimestamp: true,

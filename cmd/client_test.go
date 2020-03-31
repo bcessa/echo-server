@@ -18,7 +18,7 @@ func TestClient(t *testing.T) {
 		rpc.WithLogger(rpc.LoggingOptions{}),
 		rpc.WithPanicRecovery(),
 		rpc.WithService(&rpc.Service{
-			Setup: func(server *grpc.Server) {
+			ServerSetup: func(server *grpc.Server) {
 				samplev1.RegisterEchoAPIServer(server, &samplev1.EchoHandler{})
 			},
 		}),
@@ -58,6 +58,6 @@ func TestClient(t *testing.T) {
 
 	// Stop server
 	defer func() {
-		_ = srv.Stop()
+		_ = srv.Stop(true)
 	}()
 }

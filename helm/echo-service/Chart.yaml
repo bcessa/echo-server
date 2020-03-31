@@ -3,4 +3,4 @@ name: echo-service
 description: Sample echo service for testing purposes.
 type: application
 version: 0.1.0
-appVersion: 0.1.0
+appVersion: 0.1.1

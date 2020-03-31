@@ -2,7 +2,7 @@
 default: help
 DOCKER_IMAGE_NAME=bcessa/echo-service
 BINARY_NAME=echo-service
-VERSION_TAG=0.1.0
+VERSION_TAG=0.1.1
 
 # Linker tags
 # https://golang.org/cmd/link/
