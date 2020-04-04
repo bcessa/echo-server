@@ -5,11 +5,11 @@ replicaCount: 1
 image:
   repository: echo-server
   pullPolicy: IfNotPresent
-imagePullSecrets: []
+imagePullSecret: ""
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:
-  create: true
+  create: false
   annotations: {}
   # If not set and create is true, a name is generated using the fullname template
   name: ""
@@ -31,17 +31,12 @@ service:
 
 ingress:
   enabled: false
+  host: "echo.acme.com"
+  path: "/"
+  tls: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  tls: []
-    # - secretName: chart-example-tls
-    #   hosts:
-    #     - chart-example.local
-  hosts:
-    - host: chart-example.local
-      paths: []
-      # - /
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
 
 resources:
   requests:

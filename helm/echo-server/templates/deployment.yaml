@@ -14,9 +14,9 @@ spec:
       labels:
         {{- include "echo-service.selectorLabels" . | nindent 8 }}
     spec:
-    {{- with .Values.imagePullSecrets }}
+    {{- if .Values.imagePullSecret }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        - name: {{ .Values.imagePullSecret }}
     {{- end }}
       serviceAccountName: {{ include "echo-service.serviceAccountName" . }}
       securityContext:
@@ -46,6 +46,8 @@ spec:
               value: "/tmp/tls.crt"
             - name: ECHO_SERVER_TLS_KEY
               value: "/tmp/tls.key"
+            - name: ECHO_SERVER_PORT
+              value: "9090"
             - name: ECHO_SERVER_HTTP_PORT
               value: "9090"
           # Use simple status checks to avoid authentication issues

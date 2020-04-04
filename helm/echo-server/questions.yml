@@ -1,0 +1,46 @@
+# type: string, multiline, boolean, int, enum, password, storageclass, hostname, pvc, secret
+rancher_min_version: 2.2.0
+questions:
+  - variable: image.repository
+    label: "Image repository"
+    description: "Location to pull the image form."
+    type: string
+    required: true
+    default: "registry.bryk.io/general/echo-server"
+    group: "General"
+  - variable: imagePullSecret
+    label: "Registry pull secret."
+    description: "Private registry credentials. Must be a secret accessible on the namespace the app is deployed to."
+    type: string
+    required: false
+    group: "General"
+  - variable: ingress.enabled
+    label: "Expose the service outside the cluster."
+    description: "The service is only accessible to internal cluster services by default."
+    type: boolean
+    default: false
+    required: true
+    group: "General"
+    show_subquestion_if: true
+    subquestions:
+      - variable: ingress.host
+        label: "External URL"
+        description: "Host address where the service will be accesible."
+        type: string
+        required: true
+        default: "echo.acme.com"
+      - variable: conf.certificate
+        label: "TLS Certificate"
+        description: "Certificate to provide TLS termination at the Pod level."
+        type: string
+        required: true
+        default: ""
+      - variable: ingress.annotations
+        label: "Ingress Annotations"
+        description: "Adjust internal settings for the ingress resource."
+        type: multiline
+        required: false
+        default: |
+          kubernetes.io/ingress.class: "nginx"
+          nginx.ingress.kubernetes.io/backend-protocol: "grpcs"
+          nginx.ingress.kubernetes.io/ssl-passthrough: "true"
