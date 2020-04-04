@@ -1,6 +1,6 @@
 replicaCount: 1
 image:
-  repository: bcessa/echo-service
+  repository: echo-server
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 nameOverride: ""

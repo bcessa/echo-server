@@ -1,4 +1,4 @@
-FROM busybox:1.31.1
+FROM registry.bryk.io/general/shell:0.1.0
 
 # Metadata
 ARG VERSION
@@ -18,5 +18,5 @@ USER ${USER}:${USER}
 EXPOSE 9090 9091
 
 # Add application binary and use it as default entrypoint
-COPY echo-service-linux /bin
-ENTRYPOINT ["/bin/echo-service-linux"]
+COPY echo-server_linux_amd64 /bin/echo-server
+ENTRYPOINT ["/bin/echo-server"]
