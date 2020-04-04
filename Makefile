@@ -1,8 +1,8 @@
-.PHONY: proto
+.PHONY: all
 default: help
-DOCKER_IMAGE_NAME=echo-server
-BINARY_NAME=echo-server
 VERSION_TAG=0.1.1
+BINARY_NAME=echo-server
+DOCKER_IMAGE_NAME=echo-server
 
 # Linker tags
 # https://golang.org/cmd/link/
@@ -29,6 +29,30 @@ clean:
 updates:
 	@go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all 2> /dev/null
 
+## scan: Look for knonwn vulnerabilities in the project dependencies
+# https://github.com/sonatype-nexus-community/nancy
+scan:
+	@nancy -quiet go.sum
+
+## lint: Static analysis
+lint:
+	helm lint helm/*
+	golangci-lint run ./...
+	go-consistent -v ./...
+
+## test: Run unit tests excluding the vendor dependencies
+test:
+	go test -race -cover -v -failfast ./...
+
+## ca-roots: Generate the list of valid CA certificates
+ca-roots:
+	@docker run -dit --rm --name ca-roots debian:stable-slim
+	@docker exec --privileged ca-roots sh -c "apt update"
+	@docker exec --privileged ca-roots sh -c "apt install -y ca-certificates"
+	@docker exec --privileged ca-roots sh -c "cat /etc/ssl/certs/* > /ca-roots.crt"
+	@docker cp ca-roots:/ca-roots.crt ca-roots.crt
+	@docker stop ca-roots
+
 ## build: Build for the default architecture in use
 build:
 	go build -v -ldflags '$(LD_FLAGS)' -o $(BINARY_NAME)
@@ -45,27 +69,3 @@ docker:
 	make build-for os=linux arch=amd64
 	@-docker rmi $(DOCKER_IMAGE_NAME):$(VERSION_TAG)
 	@docker build --build-arg VERSION="$(VERSION_TAG)" --rm -t $(DOCKER_IMAGE_NAME):$(VERSION_TAG) .
-
-## ca-roots: Generate the list of valid CA certificates
-ca-roots:
-	@docker run -dit --rm --name ca-roots debian:stable-slim
-	@docker exec --privileged ca-roots sh -c "apt update"
-	@docker exec --privileged ca-roots sh -c "apt install -y ca-certificates"
-	@docker exec --privileged ca-roots sh -c "cat /etc/ssl/certs/* > /ca-roots.crt"
-	@docker cp ca-roots:/ca-roots.crt ca-roots.crt
-	@docker stop ca-roots
-
-## lint: Static analysis
-lint:
-	helm lint helm/*
-	golangci-lint run ./...
-	go-consistent -v ./...
-
-## scan: Look for knonwn vulnerabilities in the project dependencies
-# https://github.com/sonatype-nexus-community/nancy
-scan:
-	@nancy -quiet go.sum
-
-## test: Run unit tests excluding the vendor dependencies
-test:
-	go test -race -cover -v -failfast ./...
