@@ -24,7 +24,7 @@ spec:
       volumes:
         - name: cert
           secret:
-            secretName: {{ .Values.service.certificate }}
+            secretName: {{ .Values.conf.certificate }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

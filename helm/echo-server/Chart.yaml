@@ -4,3 +4,14 @@ description: Sample echo service for testing purposes.
 type: application
 version: 0.1.0
 appVersion: 0.1.1
+home: https://github.com/bcessa/echo-server
+icon: https://raw.githubusercontent.com/bcessa/echo-server/master/helm/echo-server/icon.png
+sources:
+  - https://github.com/bcessa/echo-server
+keywords:
+  - grpc
+  - example
+maintainers:
+  - name: Ben Cessa
+    email: ben@pixative.com
+    url: https://github.com/bcessa
