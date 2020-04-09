@@ -68,3 +68,7 @@ docker:
 	make build-for os=linux arch=amd64
 	@-docker rmi $(DOCKER_IMAGE_NAME):$(VERSION_TAG)
 	@docker build --build-arg VERSION="$(VERSION_TAG)" --rm -t $(DOCKER_IMAGE_NAME):$(VERSION_TAG) .
+
+## ci-update: Update the signature on the CI configuration file
+ci-update:
+	drone sign bcessa/echo-server --save
