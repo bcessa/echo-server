@@ -46,7 +46,7 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("EchoRequest", func(t *testing.T) {
-		req := &samplev1.EchoRequest{Value:"hello world"}
+		req := &samplev1.EchoRequest{Value: "hello world"}
 		res, err := cl.Request(context.TODO(), req)
 		if err != nil {
 			t.Error(err)

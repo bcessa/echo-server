@@ -1,39 +1,92 @@
 ---
 kind: pipeline
-type: docker
-name: default
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: test
-  pull: if-not-exists
-  image: golang:1.12.9
-  commands:
-  - git config --global url."https://$GITHUB_USER:$GITHUB_ACCESS_TOKEN@github.com".insteadOf "https://github.com"
-  - go build
-  - go test -race -cover -v -failfast ./...
-  environment:
-    GITHUB_ACCESS_TOKEN:
-      from_secret: github-access-token
-    GITHUB_USER:
-      from_secret: github-user
-    GOARCH: amd64
-    GOOS: linux
+type: kubernetes
+name: Continuous Integration
 
 image_pull_secrets:
-- bryk-registry
+  - bryk-io-registry
+
+steps:
+  - name: Setup environment
+    image: registry.bryk.io/general/golang:1.14
+    pull: if-not-exists
+    environment:
+      DEPLOYMENT_KEY:
+        from_secret: deployment-key
+    commands:
+      - echo "$DEPLOYMENT_KEY" | base64 -d > /drone/src/key
+      - chmod 400 /drone/src/key
+  - name: Verify style and consistency
+    image: registry.bryk.io/general/golang:1.14
+    pull: if-not-exists
+    commands:
+      - make lint
+  - name: Run unit tests
+    image: registry.bryk.io/general/golang:1.14
+    pull: if-not-exists
+    commands:
+      - make test
+  - name: Build project artifacts
+    image: registry.bryk.io/general/golang:1.14
+    pull: if-not-exists
+    commands:
+      - make build-for os=linux arch=amd64
+    when:
+      ref:
+        - refs/tags/v*
+  - name: Publish new image version
+    image: plugins/docker
+    settings:
+      registry: registry.bryk.io
+      repo: registry.bryk.io/general/echo-server
+      tags: ${DRONE_TAG##v}
+      username:
+        from_secret: registry-user
+      password:
+        from_secret: registry-password
+      build_args:
+        - VERSION=${DRONE_TAG##v}
+    when:
+      ref:
+        - refs/tags/v*
+  - name: Report errors
+    image: alpine
+    commands:
+      - echo "report failure"
+    when:
+      status:
+        - failure
 
 trigger:
-  branch:
-  - master
   event:
-  - push
+    - push
+    - tag
 
 ---
-kind: signature
-hmac: 082a949a44a08c7eacf6fa850c2328b5e40e868a4dfeb2aea2a9d5fe8897fe88
+kind: pipeline
+type: kubernetes
+name: Continuous Delivery
 
-...
+image_pull_secrets:
+  - bryk-io-registry
+
+steps:
+  - name: Run deployment
+    image: registry.bryk.io/general/drone-helm:0.1.0
+    environment:
+      KUBECONFIG:
+        from_secret: kubeconfig
+      CHART_VALUES:
+        from_secret: chart-values
+  - name: Report errors
+    image: alpine
+    commands:
+      - echo "report failure"
+    when:
+      status:
+        - failure
+
+trigger:
+  event:
+    - promote
+    - rollback

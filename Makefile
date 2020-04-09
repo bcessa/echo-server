@@ -37,8 +37,7 @@ scan:
 ## lint: Static analysis
 lint:
 	helm lint helm/*
-	golangci-lint run ./...
-	go-consistent -v ./...
+	golangci-lint run -v ./...
 
 ## test: Run unit tests excluding the vendor dependencies
 test:

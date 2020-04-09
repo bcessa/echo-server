@@ -85,6 +85,7 @@ func init() {
 	rootCmd.AddCommand(clientCmd)
 }
 
+// nolint: gocyclo
 func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishell.Shell {
 	shell := ishell.New()
 	shell.AddCmd(&ishell.Cmd{
@@ -117,7 +118,7 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 				c.Println("you must specify the contents of the request")
 				return
 			}
-			if r, err := cl.Request(context.TODO(), &samplev1.EchoRequest{Value:c.Args[0]}); err != nil {
+			if r, err := cl.Request(context.TODO(), &samplev1.EchoRequest{Value: c.Args[0]}); err != nil {
 				c.Printf("error: %s\n", err.Error())
 			} else {
 				c.Printf("%v\n", r.Result)
@@ -143,7 +144,7 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 			if _, err := cl.Slow(context.TODO(), &types.Empty{}); err != nil {
 				c.Printf("error: %s\n", err.Error())
 			} else {
-				c.Printf("latency: %dms\n", int64(time.Since(start) / time.Millisecond))
+				c.Printf("latency: %dms\n", int64(time.Since(start)/time.Millisecond))
 			}
 		},
 	})
@@ -185,7 +186,7 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 						errCount++
 					}
 				}
-				c.Printf("error rate: %d%%\n", (errCount * 100) / r)
+				c.Printf("error rate: %d%%\n", (errCount*100)/r)
 			default:
 				c.Println("invalid method name")
 			}
@@ -199,7 +200,7 @@ func getShell(cl samplev1.EchoAPIClient, hc *http.Client, endpoint string) *ishe
 				c.Println("no HTTP endpoint specified")
 				return
 			}
-			r, err := hc.Post(endpoint + "/echo/ping", "application/json", nil)
+			r, err := hc.Post(endpoint+"/echo/ping", "application/json", nil)
 			if err != nil {
 				c.Printf("error: %s\n", err.Error())
 			} else {

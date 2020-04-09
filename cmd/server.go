@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -107,6 +108,7 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 }
 
+// nolint: gocyclo
 func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Load configuration options
 	port := viper.GetInt("server.port")
@@ -128,7 +130,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		ll.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		formatter := &prefixed.TextFormatter{
-			FullTimestamp: true,
+			FullTimestamp:   true,
 			TimestampFormat: time.StampMilli,
 		}
 		formatter.SetColorScheme(&prefixed.ColorScheme{
@@ -170,7 +172,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	// Authentication by certificate
 	if clientCA := viper.GetString("server.auth.ca"); clientCA != "" {
 		le.Infof("enabling certificate-based authentication: %s", clientCA)
-		ca, err := ioutil.ReadFile(clientCA)
+		ca, err := ioutil.ReadFile(filepath.Clean(clientCA))
 		if err != nil {
 			return err
 		}
@@ -253,8 +255,10 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		// Enable monitoring
 		if viper.GetBool("server.monitoring") {
 			// Locally run dev instances of prometheus and grafana for testing.
-			// docker run -d --rm --name prometheus -p 4000:9090 -v monitor.yaml:/etc/prometheus/prometheus.yml prom/prometheus
-			// docker run -d --rm --name grafana -p 3000:3000 -e "GF_SECURITY_ADMIN_PASSWORD=password" grafana/grafana
+			// docker run -d --rm --name prometheus -p 4000:9090 \
+			//  -v monitor.yaml:/etc/prometheus/prometheus.yml prom/prometheus
+			// docker run -d --rm --name grafana -p 3000:3000 \
+			//  -e "GF_SECURITY_ADMIN_PASSWORD=password" grafana/grafana
 			le.Info("monitoring enabled on endpoint: /metrics")
 			srvOptions = append(srvOptions, rpc.WithMonitoring(rpc.MonitoringOptions{
 				IncludeHistograms:   true,
@@ -289,6 +293,6 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 		os.Interrupt,
 	})
 	le.Warn("server closed")
- 	_ = server.Stop(true)
+	_ = server.Stop(true)
 	return nil
 }

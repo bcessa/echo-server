@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 	Short: "Sample echo server",
 }
 
+// Execute provides the main application entry point
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

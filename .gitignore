@@ -14,4 +14,4 @@ ca-roots.crt
 **/*_secret.yaml
 
 # Secret files
-secrets-*
+secret*

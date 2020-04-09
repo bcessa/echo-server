@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	buildCode = ""
+	buildCode      = ""
 	buildTimestamp = ""
-	coreVersion = ""
+	coreVersion    = ""
 )
 
 var versionCmd = &cobra.Command{
