@@ -233,7 +233,7 @@ func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
 
 func runClient(_ *cobra.Command, _ []string) error {
 	var clientCert *tls.Certificate
-	var clientCA []byte = nil
+	var clientCA []byte
 	endpoint := viper.GetString("client.rpc")
 	if endpoint == "" {
 		return errors.New("you must specify the RPC endpoint")

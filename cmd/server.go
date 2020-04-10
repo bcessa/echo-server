@@ -122,7 +122,7 @@ func startServer(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	// TLS custom CA
-	var tlsCA []byte = nil
+	var tlsCA []byte
 
 	// Logger
 	ll := logrus.New()
