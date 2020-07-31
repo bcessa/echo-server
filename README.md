@@ -1,4 +1,5 @@
 # Echo Server
+
 [![Build Status](https://drone.bryk.io/api/badges/bcessa/echo-server/status.svg)](https://drone.bryk.io/bcessa/echo-server)
 [![Version](https://img.shields.io/github/tag/bcessa/echo-server.svg)](https://github.com/bcessa/echo-server/releases)
 [![Software License](https://img.shields.io/badge/license-BSD3-red.svg)](LICENSE)
@@ -17,6 +18,7 @@ __NOT__ the ingress resource.
 [TLS Secret Reference](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) 
 
 More information:
+
 - Load Balancer [DigitalOcean](https://github.com/digitalocean/digitalocean-cloud-controller-manager/blob/master/docs/controllers/services/annotations.md#servicebetakubernetesiodo-loadbalancer-tls-passthrough)
 - Ingress Controller [Nginx Ingress Controller](https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough)
 - Ingress Resource [Nginx Ingress Resource](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#ssl-passthrough)

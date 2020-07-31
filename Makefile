@@ -1,4 +1,4 @@
-.PHONY: all
+.PHONY: *
 default: help
 VERSION_TAG=0.1.1
 BINARY_NAME=echo-server
