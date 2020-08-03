@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/github/tag/bcessa/echo-server.svg)](https://github.com/bcessa/echo-server/releases)
 [![Software License](https://img.shields.io/badge/license-BSD3-red.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bcessa/echo-server?style=flat)](https://goreportcard.com/report/github.com/bcessa/echo-server)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](.github/CODE_OF_CONDUCT.md)
 
 This project provides a sample service intended only to run tests of deployment and ingress setup.
 
