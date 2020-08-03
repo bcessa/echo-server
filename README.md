@@ -1,6 +1,6 @@
 # Echo Server
 
-[![Build Status](https://drone.bryk.io/api/badges/bcessa/echo-server/status.svg)](https://drone.bryk.io/bcessa/echo-server)
+[![Build Status](https://github.com/bcessa/echo-server/workflows/ci/badge.svg?branch=master)](https://github.com/bcessa/echo-server/actions)
 [![Version](https://img.shields.io/github/tag/bcessa/echo-server.svg)](https://github.com/bcessa/echo-server/releases)
 [![Software License](https://img.shields.io/badge/license-BSD3-red.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bcessa/echo-server?style=flat)](https://goreportcard.com/report/github.com/bcessa/echo-server)
