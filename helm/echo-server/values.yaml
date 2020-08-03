@@ -3,7 +3,7 @@ conf:
 
 replicaCount: 1
 image:
-  repository: echo-server
+  repository: docker.pkg.github.com/bcessa/echo-server/echo-server
   pullPolicy: IfNotPresent
 imagePullSecret: ""
 nameOverride: ""

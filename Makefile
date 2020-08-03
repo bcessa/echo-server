@@ -1,8 +1,8 @@
 .PHONY: *
 default: help
-VERSION_TAG=0.1.1
+VERSION_TAG=0.1.2
 BINARY_NAME=echo-server
-DOCKER_IMAGE_NAME=echo-server
+DOCKER_IMAGE_NAME=docker.pkg.github.com/bcessa/echo-server/echo-server
 
 # Linker tags
 # https://golang.org/cmd/link/
@@ -29,7 +29,7 @@ clean:
 updates:
 	@go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all 2> /dev/null
 
-## scan: Look for knonwn vulnerabilities in the project dependencies
+## scan: Look for known vulnerabilities in the project dependencies
 # https://github.com/sonatype-nexus-community/nancy
 scan:
 	@nancy -quiet go.sum
@@ -56,18 +56,27 @@ ca-roots:
 build:
 	go build -v -ldflags '$(LD_FLAGS)' -o $(BINARY_NAME)
 
-## build-for: Build the availabe binaries for the specified 'os' and 'arch'
+## build-for: Build the available binaries for the specified 'os' and 'arch'
 # make build-for os=linux arch=amd64
 build-for:
 	CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) \
 	go build -v -ldflags '$(LD_FLAGS)' \
-	-o $(BINARY_NAME)_$(os)_$(arch)$(suffix)
+	-o $(dest)$(BINARY_NAME)_$(VERSION_TAG)_$(os)_$(arch)$(suffix)
 
 ## docker: Build docker image
 docker:
 	make build-for os=linux arch=amd64
 	@-docker rmi $(DOCKER_IMAGE_NAME):$(VERSION_TAG)
 	@docker build --build-arg VERSION="$(VERSION_TAG)" --rm -t $(DOCKER_IMAGE_NAME):$(VERSION_TAG) .
+
+## release: Prepare artifacts for a new tagged release
+release:
+	@-rm -rf release-$(VERSION_TAG)
+	mkdir release-$(VERSION_TAG)
+	make build-for os=linux arch=amd64 dest=release-$(VERSION_TAG)/
+	make build-for os=darwin arch=amd64 dest=release-$(VERSION_TAG)/
+	make build-for os=windows arch=amd64 suffix=".exe" dest=release-$(VERSION_TAG)/
+	make build-for os=windows arch=386 suffix=".exe" dest=release-$(VERSION_TAG)/
 
 ## ci-update: Update the signature on the CI configuration file
 ci-update:

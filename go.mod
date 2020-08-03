@@ -16,4 +16,4 @@ require (
 	google.golang.org/grpc v1.27.1
 )
 
-replace github.com/cloudflare/cfssl => github.com/bryk-io/cfssl v0.0.0-20190303174050-7d50b68e4142
+// replace github.com/cloudflare/cfssl => github.com/bryk-io/cfssl v0.0.0-20190303174050-7d50b68e4142

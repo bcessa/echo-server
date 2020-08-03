@@ -222,7 +222,10 @@ func getHTTPClient(ca []byte, cert *tls.Certificate) *http.Client {
 	if ca != nil {
 		cp, _ := x509.SystemCertPool()
 		cp.AppendCertsFromPEM(ca)
-		conf := &tls.Config{RootCAs: cp}
+		conf := &tls.Config{
+			RootCAs:    cp,
+			MinVersion: tls.VersionTLS12,
+		}
 		if cert != nil {
 			conf.Certificates = []tls.Certificate{*cert}
 		}
