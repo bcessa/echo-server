@@ -1,9 +1,10 @@
-name: "Close stale issues and pull requests"
+name: "maintenance"
 on:
   schedule:
     - cron: "0 0 * * *"
 jobs:
   stale:
+    name: "close stale issues and pull requests"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/stale@v3
