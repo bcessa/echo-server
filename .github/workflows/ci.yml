@@ -50,13 +50,18 @@ jobs:
 
       # Run unit tests
       - name: Test
-        run: |
-          go test -race -failfast -v ./...
+        run: make test
+
+      # Save coverage report as artifact
+      - name: Coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: converage.html
 
       # Ensure project compile and build successfully
       - name: Build
-        run: |
-          go build -v
+        run: make build
 
       # Populate vendor cache to speed up future runs
       - name: "Populate vendor cache"

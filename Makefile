@@ -41,7 +41,8 @@ lint:
 
 ## test: Run unit tests excluding the vendor dependencies
 test:
-	go test -race -cover -v -failfast ./...
+	go test -race -v -failfast -coverprofile=coverage.report ./...
+	go tool cover -html coverage.report -o coverage.html
 
 ## ca-roots: Generate the list of valid CA certificates
 ca-roots:

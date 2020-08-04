@@ -15,3 +15,6 @@ ca-roots.crt
 
 # Secret files
 secret*
+
+# Code coverage reports
+coverage.*
