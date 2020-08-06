@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - actions
     tags:
       - v*
   pull_request:
@@ -31,7 +32,8 @@ jobs:
       - name: Set up runner environment
         run: ./.github/workflows/assets/utils.sh setup
         env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GITHUB_USER: ${{ github.actor }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
       # If "vendor" is in cache, restore.
       # To run conditional steps use:
