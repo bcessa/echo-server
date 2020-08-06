@@ -9,5 +9,5 @@ LABEL version=${VERSION}
 EXPOSE 9090 9091
 
 # Add application binary and use it as default entrypoint
-COPY echo-server_${VERSION}_linux_amd64 /bin/echo-server
+COPY echo-server_linux_amd64 /bin/echo-server
 ENTRYPOINT ["/bin/echo-server"]
