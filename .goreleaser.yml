@@ -1,0 +1,53 @@
+dist: dist
+before:
+  hooks:
+    - go mod download
+    - go generate ./...
+builds:
+  -
+    flags:
+      -v
+    ldflags:
+      - -s -w
+      - -X github.com/bcessa/echo-server/cmd.coreVersion={{.Version}}
+      - -X github.com/bcessa/echo-server/cmd.buildCode={{.Commit}}
+      - -X github.com/bcessa/echo-server/cmd.buildTimestamp={{.CommitDate}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+archives:
+  -
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+  algorithm: sha256
+source:
+  enabled: false
+snapshot:
+  name_template: '{{ .Tag }}-next'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - typo
+brews:
+  -
+    name: echo-server
+    tap:
+      owner: bcessa
+      name: homebrew-tap
+    homepage: 'https://github.com/bcessa/echo-server'
+    description: 'Sample RPC server.'
+    skip_upload: true
+    install: |
+      bin.install "echo-server"
+    test: |
+      system "#{bin}/echo-server version"

@@ -1,15 +1,22 @@
 .PHONY: *
 default: help
-VERSION_TAG=0.1.2
+
+# Project setup
 BINARY_NAME=echo-server
 DOCKER_IMAGE_NAME=docker.pkg.github.com/bcessa/echo-server/echo-server
+MAINTAINERS='Ben Cessa <ben@pixative.com>'
+
+# State values
+GIT_COMMIT_DATE=$(shell TZ=UTC git log -n1 --pretty=format:'%cd' --date='format-local:%Y-%m-%dT%H:%M:%SZ')
+GIT_COMMIT_HASH=$(shell git log -n1 --pretty=format:'%H')
+GIT_TAG=$(patsubst v%,%,$(shell git describe --abbrev=0 --match='v*' --always | cut -c 1-8))
 
 # Linker tags
 # https://golang.org/cmd/link/
 LD_FLAGS += -s -w
-LD_FLAGS += -X github.com/bcessa/echo-server/cmd.coreVersion=$(VERSION_TAG)
-LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildTimestamp=$(shell date +'%s')
-LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildCode=$(shell git log --pretty=format:'%H' -n1)
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.coreVersion=$(GIT_TAG)
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildTimestamp=$(GIT_COMMIT_DATE)
+LD_FLAGS += -X github.com/bcessa/echo-server/cmd.buildCode=$(GIT_COMMIT_HASH)
 
 ## help: Prints this help message
 help:
@@ -62,24 +69,22 @@ build:
 build-for:
 	CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) \
 	go build -v -ldflags '$(LD_FLAGS)' \
-	-o $(dest)$(BINARY_NAME)_$(VERSION_TAG)_$(os)_$(arch)$(suffix)
-
-## docker: Build docker image
-docker:
-	make build-for os=linux arch=amd64
-	mv $(BINARY_NAME)_$(VERSION_TAG)_linux_amd64 $(BINARY_NAME)_linux_amd64
-	@-docker rmi $(DOCKER_IMAGE_NAME):$(VERSION_TAG)
-	@docker build --build-arg VERSION="$(VERSION_TAG)" --rm -t $(DOCKER_IMAGE_NAME):$(VERSION_TAG) .
+	-o $(BINARY_NAME)_$(os)_$(arch)$(suffix)
 
 ## release: Prepare artifacts for a new tagged release
 release:
-	@-rm -rf release-$(VERSION_TAG)
-	mkdir release-$(VERSION_TAG)
-	make build-for os=linux arch=amd64 dest=release-$(VERSION_TAG)/
-	make build-for os=darwin arch=amd64 dest=release-$(VERSION_TAG)/
-	make build-for os=windows arch=amd64 suffix=".exe" dest=release-$(VERSION_TAG)/
-	make build-for os=windows arch=386 suffix=".exe" dest=release-$(VERSION_TAG)/
+	goreleaser release --skip-validate --skip-publish --rm-dist
 
-## ci-update: Update the signature on the CI configuration file
-ci-update:
-	drone sign bcessa/echo-server --save
+## docker: Build docker image
+# https://github.com/opencontainers/image-spec/blob/master/annotations.md
+docker:
+	make build-for os=linux arch=amd64
+	@-docker rmi $(DOCKER_IMAGE_NAME):$(GIT_TAG)
+	@docker build \
+	"--label=org.opencontainers.image.title=echo-server" \
+	"--label=org.opencontainers.image.authors=$(MAINTAINERS)" \
+	"--label=org.opencontainers.image.created=$(GIT_COMMIT_DATE)" \
+	"--label=org.opencontainers.image.revision=$(GIT_COMMIT_HASH)" \
+	"--label=org.opencontainers.image.version=$(GIT_TAG)" \
+	--rm -t $(DOCKER_IMAGE_NAME):$(GIT_TAG) .
+	@rm $(BINARY_NAME)_linux_amd64

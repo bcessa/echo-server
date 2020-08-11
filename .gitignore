@@ -18,3 +18,6 @@ secret*
 
 # Code coverage reports
 coverage.*
+
+# Release files
+dist
