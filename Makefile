@@ -3,13 +3,13 @@ default: help
 
 # Project setup
 BINARY_NAME=echo-server
-DOCKER_IMAGE_NAME=docker.pkg.github.com/bcessa/echo-server/echo-server
+DOCKER_IMAGE=docker.pkg.github.com/bcessa/echo-server/echo-server
 MAINTAINERS='Ben Cessa <ben@pixative.com>'
 
 # State values
 GIT_COMMIT_DATE=$(shell TZ=UTC git log -n1 --pretty=format:'%cd' --date='format-local:%Y-%m-%dT%H:%M:%SZ')
 GIT_COMMIT_HASH=$(shell git log -n1 --pretty=format:'%H')
-GIT_TAG=$(patsubst v%,%,$(shell git describe --abbrev=0 --match='v*' --always | cut -c 1-8))
+GIT_TAG=$(shell git describe --tags --always --abbrev=0 | cut -c 1-8)
 
 # Linker tags
 # https://golang.org/cmd/link/
@@ -79,12 +79,12 @@ release:
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
 docker:
 	make build-for os=linux arch=amd64
-	@-docker rmi $(DOCKER_IMAGE_NAME):$(GIT_TAG)
+	@-docker rmi $(DOCKER_IMAGE):$(GIT_TAG)
 	@docker build \
-	"--label=org.opencontainers.image.title=echo-server" \
+	"--label=org.opencontainers.image.title=$(BINARY_NAME)" \
 	"--label=org.opencontainers.image.authors=$(MAINTAINERS)" \
 	"--label=org.opencontainers.image.created=$(GIT_COMMIT_DATE)" \
 	"--label=org.opencontainers.image.revision=$(GIT_COMMIT_HASH)" \
 	"--label=org.opencontainers.image.version=$(GIT_TAG)" \
-	--rm -t $(DOCKER_IMAGE_NAME):$(GIT_TAG) .
+	--rm -t $(DOCKER_IMAGE):$(GIT_TAG) .
 	@rm $(BINARY_NAME)_linux_amd64

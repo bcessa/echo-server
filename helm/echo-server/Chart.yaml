@@ -3,7 +3,7 @@ name: echo-server
 description: Sample echo service for testing purposes.
 type: application
 version: 0.2.0
-appVersion: 0.1.2
+appVersion: 0.1.4
 home: https://github.com/bcessa/echo-server
 icon: https://raw.githubusercontent.com/bcessa/echo-server/master/helm/echo-server/icon.png
 sources:
