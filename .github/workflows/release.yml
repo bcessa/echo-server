@@ -56,7 +56,6 @@ jobs:
           password: ${{ github.token }}
           push: true
           tag_with_ref: true
-          tag_with_sha: true
           add_git_labels: true
 
       # Use goreleaser to create the new release

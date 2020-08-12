@@ -23,43 +23,6 @@ help:
 	@echo "Commands available"
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /' | sort
 
-## clean: Download and compile all dependencies and intermediary products
-clean:
-	@-rm -rf vendor
-	go mod tidy
-	go mod verify
-	go mod download
-	go mod vendor
-
-## updates: List available updates for direct dependencies
-# https://github.com/golang/go/wiki/Modules#how-to-upgrade-and-downgrade-dependencies
-updates:
-	@go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all 2> /dev/null
-
-## scan: Look for known vulnerabilities in the project dependencies
-# https://github.com/sonatype-nexus-community/nancy
-scan:
-	@nancy -quiet go.sum
-
-## lint: Static analysis
-lint:
-	helm lint helm/*
-	golangci-lint run -v ./...
-
-## test: Run unit tests excluding the vendor dependencies
-test:
-	go test -race -v -failfast -coverprofile=coverage.report ./...
-	go tool cover -html coverage.report -o coverage.html
-
-## ca-roots: Generate the list of valid CA certificates
-ca-roots:
-	@docker run -dit --rm --name ca-roots debian:stable-slim
-	@docker exec --privileged ca-roots sh -c "apt update"
-	@docker exec --privileged ca-roots sh -c "apt install -y ca-certificates"
-	@docker exec --privileged ca-roots sh -c "cat /etc/ssl/certs/* > /ca-roots.crt"
-	@docker cp ca-roots:/ca-roots.crt ca-roots.crt
-	@docker stop ca-roots
-
 ## build: Build for the default architecture in use
 build:
 	go build -v -ldflags '$(LD_FLAGS)' -o $(BINARY_NAME)
@@ -71,9 +34,22 @@ build-for:
 	go build -v -ldflags '$(LD_FLAGS)' \
 	-o $(BINARY_NAME)_$(os)_$(arch)$(suffix)
 
-## release: Prepare artifacts for a new tagged release
-release:
-	goreleaser release --skip-validate --skip-publish --rm-dist
+## ca-roots: Generate the list of valid CA certificates
+ca-roots:
+	@docker run -dit --rm --name ca-roots debian:stable-slim
+	@docker exec --privileged ca-roots sh -c "apt update"
+	@docker exec --privileged ca-roots sh -c "apt install -y ca-certificates"
+	@docker exec --privileged ca-roots sh -c "cat /etc/ssl/certs/* > /ca-roots.crt"
+	@docker cp ca-roots:/ca-roots.crt ca-roots.crt
+	@docker stop ca-roots
+
+## clean: Download and compile all dependencies and intermediary products
+clean:
+	@-rm -rf vendor
+	go mod tidy
+	go mod verify
+	go mod download
+	go mod vendor
 
 ## docker: Build docker image
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
@@ -88,3 +64,27 @@ docker:
 	"--label=org.opencontainers.image.version=$(GIT_TAG)" \
 	--rm -t $(DOCKER_IMAGE):$(GIT_TAG) .
 	@rm $(BINARY_NAME)_linux_amd64
+
+## lint: Static analysis
+lint:
+	helm lint helm/*
+	golangci-lint run -v ./...
+
+## release: Prepare artifacts for a new tagged release
+release:
+	goreleaser release --skip-validate --skip-publish --rm-dist
+
+## scan: Look for known vulnerabilities in the project dependencies
+# https://github.com/sonatype-nexus-community/nancy
+scan:
+	@nancy -quiet go.sum
+
+## test: Run unit tests excluding the vendor dependencies
+test:
+	go test -race -v -failfast -coverprofile=coverage.report ./...
+	go tool cover -html coverage.report -o coverage.html
+
+## updates: List available updates for direct dependencies
+# https://github.com/golang/go/wiki/Modules#how-to-upgrade-and-downgrade-dependencies
+updates:
+	@go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all 2> /dev/null
